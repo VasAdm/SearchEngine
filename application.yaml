@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    username: SearchEngine_user
+    password: SearchEngine_password
+    url: jdbc:mysql://62.148.227.113:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+#    defer-datasource-initialization: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant-path-matcher
+  sql:
+    init:
+#      data-locations: classpath:data.sql
+#      mode: always
+
+indexing-settings:
+  sites:
+    - url: https://www.lenta.ru
+      name: Лента.ру
+    - url: https://www.skillbox.ru
+      name: Skillbox
+    - url: https://www.playback.ru
+      name: PlayBack.Ru
