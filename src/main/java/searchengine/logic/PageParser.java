@@ -1,4 +1,4 @@
-package searchengine.services.parser;
+package searchengine.logic;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -10,11 +10,10 @@ import searchengine.model.site.SiteEntity;
 import java.io.IOException;
 
 public class PageParser {
-
     public static PageEntityWithDoc parsePage(String url, SiteEntity site) {
-        PageEntityWithDoc pageWithDoc = new PageEntityWithDoc();
+        PageEntityWithDoc pageEntityWithDoc = new PageEntityWithDoc();
         PageEntity page = new PageEntity();
-        Document document = null;
+        Document document;
 
         int delay = (int) (Math.random() * ((2000 - 500) + 1)) + 500;
         try {
@@ -34,19 +33,20 @@ public class PageParser {
                 if (url.equals(site.getUrl())) {
                     page.setPath("/");
                 } else {
-                    page.setPath(url.substring(site.getUrl().length() - 1));
+                    page.setPath(url.substring(site.getUrl().length()));
                 }
 
                 page.setCode(statusCode);
                 page.setSite(site);
+
+                pageEntityWithDoc.setPage(page);
+                pageEntityWithDoc.setDocument(document);
             }
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        pageWithDoc.setPage(page);
-        pageWithDoc.setDocument(document);
 
-        return pageWithDoc;
+        return pageEntityWithDoc;
     }
 }

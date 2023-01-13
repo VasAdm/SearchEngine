@@ -16,7 +16,8 @@ import java.io.Serializable;
 @Setter
 @ApiModel(description = "entity representing a webpage")
 @Table(name = "pages", indexes = {
-        @Index(name = "relative_path", columnList = "path, site_id", unique = true)
+        @Index(name = "path", columnList = "path"),
+        @Index(name = "site_id", columnList = "site_id"),
 })
 public class PageEntity implements Serializable {
     @Id
@@ -37,7 +38,7 @@ public class PageEntity implements Serializable {
     @ApiModelProperty("response code")
     private int code;
 
-    @Column(columnDefinition = "MEDIUMTEXT NOT NULL")
+    @Column(columnDefinition = "TEXT NOT NULL")
     @ApiModelProperty("content of webpage")
     private String content;
 

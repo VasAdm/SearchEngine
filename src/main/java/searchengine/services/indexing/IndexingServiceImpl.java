@@ -1,32 +1,25 @@
 package searchengine.services.indexing;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import searchengine.config.Site;
+import org.springframework.stereotype.Component;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.indexing.IndexingStatusResponseError;
-import searchengine.model.StatusType;
-import searchengine.model.page.PageService;
+import searchengine.logic.TaskRunner;
 import searchengine.model.site.SiteEntity;
-import searchengine.model.site.SiteService;
-import searchengine.services.parser.*;
+import searchengine.services.StatusType;
+import searchengine.services.site.SiteService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Predicate;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class IndexingServiceImpl implements IndexingService {
-
     private final SitesList sites;
-
     private final SiteService siteService;
-
-    private final PageService pageService;
 
     @Override
     public IndexingStatusResponse getIndexingStatus() {
@@ -41,24 +34,25 @@ public class IndexingServiceImpl implements IndexingService {
             return new IndexingStatusResponseError(false, "Индексаци уже запущена");
         } else {
 
-            sites.getSites().forEach(s -> siteService.deleteAllByUrl(s.getUrl()));
+            siteList.forEach(s -> {
+                siteService.deleteAllById(s.getId());
+            });
 
-            for (Site s : sites.getSites()) {
-
+            sites.getSites().forEach(site -> {
                 SiteEntity siteEntity = new SiteEntity();
-                siteEntity.setName(s.getName());
+                siteEntity.setName(site.getName());
+                siteEntity.setUrl(site.getUrl());
                 siteEntity.setStatus(StatusType.INDEXING);
                 siteEntity.setStatusTime(LocalDateTime.now());
-                siteEntity.setUrl(s.getUrl());
 
                 siteService.save(siteEntity);
+            });
 
-                new ForkJoinPool().execute(new WebParser(pageService, siteEntity.getUrl(), siteEntity));
-            }
+            TaskRunner.setSiteEntities(siteList);
+            new Thread(TaskRunner::start).start();
 
             return new IndexingStatusResponse(true);
         }
     }
-
 
 }

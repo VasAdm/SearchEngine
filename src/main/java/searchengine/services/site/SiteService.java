@@ -1,8 +1,9 @@
-package searchengine.model.site;
+package searchengine.services.site;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.model.site.SiteEntity;
+import searchengine.repository.SiteRepository;
 
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class SiteService {
         this.siteRepository = siteRepository;
     }
 
-    public List<SiteEntity> getSitesData() {
+    public Iterable<SiteEntity> getSitesData() {
         return siteRepository.findAll();
     }
 
@@ -24,11 +25,14 @@ public class SiteService {
         return siteRepository.getByUrl(url);
     }
 
-    public Integer deleteAllByUrl(String url) {
-        return siteRepository.deleteAllByUrl(url);
+    public void deleteAllById(Integer id) {
+        siteRepository.deleteById(id);
     }
 
     public SiteEntity save(SiteEntity site) {
         return siteRepository.save(site);
     }
+    public void deleteAll() {siteRepository.deleteAll();}
+
+
 }

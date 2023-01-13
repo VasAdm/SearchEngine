@@ -3,26 +3,27 @@ server:
 
 spring:
   datasource:
-    username: postgres
-    password: QwEr3466
-    url: jdbc:postgresql://localhost:5432/search_engine
-#    url: jdbc:postgresql://62.148.227.113:5432/search_engine
-    driver-class-name: org.postgresql.Driver
-
+    username: SearchEngine_user
+    password: SearchEngine_password
+    url: jdbc:mysql://62.148.227.113:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
   jpa:
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        storage_engine: innodb
         format_sql: true
-        jdbc:
-          batch_size: 100
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
 #    defer-datasource-initialization: true
   mvc:
     pathmatch:
       matching-strategy: ant-path-matcher
+
+#  sql:
+#    init:
+#      data-locations: classpath:data.sql
+#      mode: always
 
 indexing-settings:
   sites:

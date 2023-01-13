@@ -1,10 +1,13 @@
 package searchengine.model.site;
 
+import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
-import searchengine.model.StatusType;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import searchengine.services.StatusType;
 import searchengine.model.page.PageEntity;
 
 import javax.persistence.*;
@@ -18,6 +21,10 @@ import java.util.Set;
 @Setter
 @ApiModel(description = "entity representing a website")
 @Table(name = "sites")
+@TypeDef(
+        name = "status_type",
+        typeClass = PostgreSQLEnumType.class
+)
 public class SiteEntity implements Serializable {
 
     @Id
@@ -25,12 +32,13 @@ public class SiteEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(columnDefinition = "enum('INDEXING', 'INDEXED', 'FAILED') NOT NULL")
     @ApiModelProperty("indexing status")
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    @Type( type = "status_type" )
     private StatusType status;
 
-    @Column(name = "status_time", columnDefinition = "DATETIME NOT NULL")
+    @Column(name = "status_time", nullable = false)
     @ApiModelProperty("time when status was changed")
     private LocalDateTime statusTime;
 
@@ -46,6 +54,6 @@ public class SiteEntity implements Serializable {
     @ApiModelProperty("name of website")
     private String name;
 
-    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
     private Set<PageEntity> pageEntities = new HashSet<>();
 }

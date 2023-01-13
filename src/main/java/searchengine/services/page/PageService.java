@@ -1,8 +1,11 @@
-package searchengine.model.page;
+package searchengine.services.page;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import searchengine.model.site.SiteEntity;
+import searchengine.model.page.PageEntity;
+import searchengine.repository.PageRepository;
+
+import java.util.List;
 
 @Service
 public class PageService {
@@ -17,5 +20,11 @@ public class PageService {
         return pageRepository.save(page);
     }
 
-    public boolean isPageExist(String path, SiteEntity site) {return pageRepository.existsByPathAndSite(path, site);}
+    public Iterable<PageEntity> saveAll(List<PageEntity> pagesList) {
+        return pageRepository.saveAll(pagesList);
+    }
+
+    public void deleteAll() {
+        pageRepository.deleteAll();
+    }
 }
