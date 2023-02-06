@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
+import org.jsoup.nodes.Document;
 import searchengine.model.site.SiteEntity;
 
 import javax.persistence.*;
@@ -41,5 +42,10 @@ public class PageEntity implements Serializable {
     @Column(columnDefinition = "TEXT NOT NULL")
     @ApiModelProperty("content of webpage")
     private String content;
+
+//    @Column(columnDefinition = "TEXT NOT NULL")
+//    @ApiModelProperty("content of webpage")
+//    private String content;
+
 
 }

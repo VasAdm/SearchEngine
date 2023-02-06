@@ -12,7 +12,9 @@ import searchengine.services.site.SiteService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 @Component
@@ -23,20 +25,18 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public IndexingStatusResponse getIndexingStatus() {
-        List<SiteEntity> siteList = new ArrayList<>();
+        Set<SiteEntity> siteEntities = new HashSet<>();
 
         sites.getSites().forEach(s -> {
             SiteEntity site = siteService.getSiteByUrl(s.getUrl());
-            if (site != null) siteList.add(site);
+            if (site != null) siteEntities.add(site);
         });
 
-        if (siteList.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
+        if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
             return new IndexingStatusResponseError(false, "Индексаци уже запущена");
         } else {
 
-            siteList.forEach(s -> {
-                siteService.deleteAllById(s.getId());
-            });
+            siteService.deleteAll();
 
             sites.getSites().forEach(site -> {
                 SiteEntity siteEntity = new SiteEntity();
@@ -45,11 +45,10 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatus(StatusType.INDEXING);
                 siteEntity.setStatusTime(LocalDateTime.now());
 
-                siteService.save(siteEntity);
+                siteEntities.add(siteService.save(siteEntity));
             });
 
-            TaskRunner.setSiteEntities(siteList);
-            new Thread(TaskRunner::start).start();
+            new Thread(new TaskRunner(siteEntities)).start();
 
             return new IndexingStatusResponse(true);
         }

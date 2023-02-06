@@ -57,6 +57,7 @@ public class LinkCollector {
                 }
             }
         }
+
         pageService.saveAll(result.keySet().stream().toList());
         SiteEntity site = page.getSite();
         site.setStatusTime(LocalDateTime.now());

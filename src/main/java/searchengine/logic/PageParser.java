@@ -22,6 +22,7 @@ public class PageParser {
             Connection.Response response = Jsoup.connect(url).maxBodySize(0).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").referrer("https://www.google.com").ignoreHttpErrors(true).ignoreContentType(true).execute();
 
             String contentType = response.contentType();
+            System.out.println(response.url().getPath());
 
             assert contentType != null;
             if (contentType.contains("text/")) {
