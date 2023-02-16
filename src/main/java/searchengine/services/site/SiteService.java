@@ -32,6 +32,7 @@ public class SiteService {
     public SiteEntity save(SiteEntity site) {
         return siteRepository.save(site);
     }
+
     public void deleteAll() {siteRepository.deleteAll();}
 
 

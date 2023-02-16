@@ -24,14 +24,19 @@ public class TaskRunner implements Runnable {
 		SiteService siteService = RepoHolder.getSiteService();
 
 		for (SiteEntity site : siteEntities) {
-			ForkJoinPool task = new ForkJoinPool();
+			ForkJoinPool task = new ForkJoinPool(8);
 			task.execute(new WebParser(site.getUrl(), site));
 			taskList.put(site, task);
 		}
 
 		while (!taskList.isEmpty()) {
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			for (Map.Entry<SiteEntity, ForkJoinPool> entry : taskList.entrySet()) {
-				if (entry.getValue().isTerminated()) {
+				if (entry.getValue().isQuiescent() || entry.getValue().isTerminated()) {
 					SiteEntity site = entry.getKey();
 					taskList.remove(site);
 					site.setStatusTime(LocalDateTime.now());

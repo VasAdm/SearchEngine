@@ -3,51 +3,69 @@ package searchengine.logic;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import searchengine.config.Site;
+import searchengine.model.page.Page;
 import searchengine.model.page.PageEntity;
-import searchengine.model.page.PageEntityWithDoc;
 import searchengine.model.site.SiteEntity;
+import searchengine.services.RepoHolder;
+import searchengine.services.page.PageService;
+import searchengine.services.site.SiteService;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class PageParser {
-    public static PageEntityWithDoc parsePage(String url, SiteEntity site) {
-        PageEntityWithDoc pageEntityWithDoc = new PageEntityWithDoc();
-        PageEntity page = new PageEntity();
-        Document document;
+	private final String url;
+	private final SiteEntity site;
+	private final PageService pageService;
+	private final SiteService siteService;
 
-        int delay = (int) (Math.random() * ((2000 - 500) + 1)) + 500;
-        try {
-            Thread.sleep(delay);
+	public PageParser(String url, SiteEntity site) {
+		this.url = url;
+		this.site = site;
+		this.pageService = RepoHolder.getPageService();
+		this.siteService = RepoHolder.getSiteService();
+	}
 
-            Connection.Response response = Jsoup.connect(url).maxBodySize(0).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").referrer("https://www.google.com").ignoreHttpErrors(true).ignoreContentType(true).execute();
+	public Page parsePage() {
+		PageEntity pageEntity = new PageEntity();
+		Page page = new Page();
 
-            String contentType = response.contentType();
-            System.out.println(response.url().getPath());
+		int delay = (int) (Math.random() * ((5000 - 3000) + 1)) + 3000;
+		try {
+			Thread.sleep(delay);
 
-            assert contentType != null;
-            if (contentType.contains("text/")) {
-                int statusCode = response.statusCode();
+			Connection.Response response = Jsoup.connect(url).maxBodySize(0).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").referrer("https://www.google.com").ignoreHttpErrors(true).ignoreContentType(true).execute();
 
-                document = response.parse();
+			String contentType = response.contentType();
+//			System.out.println(response.url().getPath());
 
-                page.setContent(document.toString());
-                if (url.equals(site.getUrl())) {
-                    page.setPath("/");
-                } else {
-                    page.setPath(url.substring(site.getUrl().length()));
-                }
+			assert contentType != null;
+			if (contentType.contains("text/")) {
+				int statusCode = response.statusCode();
 
-                page.setCode(statusCode);
-                page.setSite(site);
+				Document document = response.parse();
 
-                pageEntityWithDoc.setPage(page);
-                pageEntityWithDoc.setDocument(document);
-            }
+				page.setSite(site);
+				page.setDocument(document);
 
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+				pageEntity.setContent(document.toString());
+				String path = response.url().getPath();
+				pageEntity.setPath(Objects.equals(path, "") ? "/" : path);
+				pageEntity.setCode(statusCode);
+				pageEntity.setSite(site);
 
-        return pageEntityWithDoc;
-    }
+
+				pageService.save(pageEntity);
+				site.setStatusTime(LocalDateTime.now());
+				siteService.save(site);
+			}
+
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		return page;
+	}
 }

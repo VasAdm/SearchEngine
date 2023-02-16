@@ -8,6 +8,7 @@ import searchengine.dto.indexing.IndexingStatusResponseError;
 import searchengine.logic.TaskRunner;
 import searchengine.model.site.SiteEntity;
 import searchengine.services.StatusType;
+import searchengine.services.page.PageService;
 import searchengine.services.site.SiteService;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ import java.util.function.Predicate;
 public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
     private final SiteService siteService;
+    private final PageService pageService;
 
     @Override
     public IndexingStatusResponse getIndexingStatus() {
@@ -37,6 +39,8 @@ public class IndexingServiceImpl implements IndexingService {
         } else {
 
             siteService.deleteAll();
+            pageService.deleteAll();
+            siteEntities.clear();
 
             sites.getSites().forEach(site -> {
                 SiteEntity siteEntity = new SiteEntity();

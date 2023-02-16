@@ -1,68 +1,53 @@
 package searchengine.logic;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.nodes.Document;
+import lombok.Setter;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
-import searchengine.model.page.PageEntity;
-import searchengine.model.page.PageEntityWithDoc;
+import searchengine.model.page.Page;
 import searchengine.model.site.SiteEntity;
 import searchengine.services.LinkHolder;
-import searchengine.services.RepoHolder;
-import searchengine.services.page.PageService;
-import searchengine.services.site.SiteService;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
 @RequiredArgsConstructor
+@Getter
+@Setter
 public class LinkCollector {
-    private final SiteService siteService;
-    private final PageService pageService;
 
-    public LinkCollector() {
-        siteService = RepoHolder.getSiteService();
-        pageService = RepoHolder.getPageService();
-    }
+	private final String url;
+	private final SiteEntity site;
 
-    public Map<PageEntity, SiteEntity> collectLinks(PageEntityWithDoc pageEntityWithDoc) {
-        Map<PageEntity, SiteEntity> result = Collections.synchronizedMap(new HashMap<>());
-        PageEntity page = pageEntityWithDoc.getPage();
-        Document document = pageEntityWithDoc.getDocument();
-
-        if (document != null) {
-            Elements elements = document.select("a[href^=/]");
-
-            for (Element el : elements) {
-                String absPath = el.attr("abs:href");
-                String relPath = el.attr("href");
+	public Map<String, SiteEntity> collectLinks() {
+		Map<String, SiteEntity> result = Collections.synchronizedMap(new HashMap<>());
+		Page page = new PageParser(url, site).parsePage();
 
 
-                boolean isContainRoot = absPath.contains(page.getSite().getUrl());
-                boolean isAlreadyAdded = LinkHolder.addLink(absPath);
-                boolean isAnchor = relPath.contains("#");
+		Elements elements = page.getDocument().select("a[href^=/]");
 
-                boolean isFit =
-                        isContainRoot &&
-                                !isAlreadyAdded &&
-                                !isAnchor;
+		for (Element el : elements) {
+			String absPath = el.attr("abs:href");
+			String relPath = el.attr("href");
 
-                if (isFit) {
-                    PageEntityWithDoc pageWithDoc = PageParser.parsePage(absPath, page.getSite());
-                    if (pageWithDoc.getPage() != null) result.put(pageWithDoc.getPage(), page.getSite());
-                }
-            }
-        }
 
-        pageService.saveAll(result.keySet().stream().toList());
-        SiteEntity site = page.getSite();
-        site.setStatusTime(LocalDateTime.now());
-        siteService.save(site);
+			boolean isContainRoot = absPath.contains(page.getSite().getUrl());
+			boolean isNotAlreadyAdded = LinkHolder.addLink(site, absPath);
+			boolean isAnchor = relPath.contains("#");
 
-        return result;
-    }
+			boolean isFit =
+					isContainRoot &&
+							isNotAlreadyAdded &&
+							!isAnchor;
+
+			if (isFit) {
+				result.put(absPath, page.getSite());
+			}
+		}
+
+		return result;
+	}
 }
