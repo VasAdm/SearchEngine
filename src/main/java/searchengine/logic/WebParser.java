@@ -17,10 +17,15 @@ public class WebParser extends RecursiveAction {
 		LinkCollector linkCollector = new LinkCollector(url, siteEntity);
 
 		Map<String, SiteEntity> child = linkCollector.collectLinks();
+//		if (siteEntity.getName().equals("Skillbox"))
+//		System.out.println(Thread.currentThread().getName() + System.lineSeparator() + "\tPage: " + url);
 
-		for (Map.Entry<String, SiteEntity> entity : child.entrySet()) {
-			WebParser task = new WebParser(entity.getKey(), entity.getValue());
-			task.fork();
+		if (child.size() != 0) {
+
+			for (Map.Entry<String, SiteEntity> entity : child.entrySet()) {
+				WebParser task = new WebParser(entity.getKey(), entity.getValue());
+				task.fork();
+			}
 		}
 	}
 }

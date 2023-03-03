@@ -9,23 +9,30 @@ import org.springframework.stereotype.Component;
 import searchengine.model.page.Page;
 import searchengine.model.site.SiteEntity;
 import searchengine.services.LinkHolder;
+import searchengine.services.RepoHolder;
+import searchengine.services.page.PageService;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@RequiredArgsConstructor
 @Getter
 @Setter
 public class LinkCollector {
 
 	private final String url;
 	private final SiteEntity site;
+	private final PageService pageService;
+
+	public LinkCollector(String url, SiteEntity site) {
+		this.url = url;
+		this.site = site;
+		this.pageService = RepoHolder.getPageService();
+	}
 
 	public Map<String, SiteEntity> collectLinks() {
-		Map<String, SiteEntity> result = Collections.synchronizedMap(new HashMap<>());
+		Map<String, SiteEntity> result = new HashMap<>();
 		Page page = new PageParser(url, site).parsePage();
-
 
 		Elements elements = page.getDocument().select("a[href^=/]");
 
@@ -35,15 +42,16 @@ public class LinkCollector {
 
 
 			boolean isContainRoot = absPath.contains(page.getSite().getUrl());
-			boolean isNotAlreadyAdded = LinkHolder.addLink(site, absPath);
+			boolean isAlreadyAdded = pageService.isAlreadyExist(relPath, site);
 			boolean isAnchor = relPath.contains("#");
 
 			boolean isFit =
 					isContainRoot &&
-							isNotAlreadyAdded &&
+							!isAlreadyAdded &&
 							!isAnchor;
 
 			if (isFit) {
+				System.out.println(absPath + " - " + page.getSite().getUrl());
 				result.put(absPath, page.getSite());
 			}
 		}

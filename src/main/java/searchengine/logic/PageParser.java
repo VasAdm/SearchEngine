@@ -2,8 +2,8 @@ package searchengine.logic;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Document;
-import searchengine.config.Site;
 import searchengine.model.page.Page;
 import searchengine.model.page.PageEntity;
 import searchengine.model.site.SiteEntity;
@@ -12,11 +12,12 @@ import searchengine.services.page.PageService;
 import searchengine.services.site.SiteService;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class PageParser {
-	private final String url;
+	private String url;
 	private final SiteEntity site;
 	private final PageService pageService;
 	private final SiteService siteService;
@@ -32,14 +33,13 @@ public class PageParser {
 		PageEntity pageEntity = new PageEntity();
 		Page page = new Page();
 
-		int delay = (int) (Math.random() * ((5000 - 3000) + 1)) + 3000;
+//		int delay = (int) (Math.random() * ((5000 - 3000) + 1)) + 3000;
 		try {
-			Thread.sleep(delay);
+//			Thread.sleep(delay);
 
-			Connection.Response response = Jsoup.connect(url).maxBodySize(0).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").referrer("https://www.google.com").ignoreHttpErrors(true).ignoreContentType(true).execute();
+			Connection.Response response = Jsoup.connect(url).maxBodySize(0).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").referrer("https://www.google.com").ignoreContentType(true).execute();
 
 			String contentType = response.contentType();
-//			System.out.println(response.url().getPath());
 
 			assert contentType != null;
 			if (contentType.contains("text/")) {
@@ -57,12 +57,13 @@ public class PageParser {
 				pageEntity.setSite(site);
 
 
-				pageService.save(pageEntity);
-				site.setStatusTime(LocalDateTime.now());
-				siteService.save(site);
+				if (pageService.save(pageEntity)) {
+					site.setStatusTime(LocalDateTime.now());
+					siteService.save(site);
+				}
 			}
 
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
