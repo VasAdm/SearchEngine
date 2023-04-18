@@ -1,4 +1,4 @@
-package searchengine.services.site;
+package searchengine.repository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

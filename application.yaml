@@ -6,7 +6,7 @@ spring:
     username: postgres
     password: QwEr3466
     url: jdbc:postgresql://localhost:5432/search_engine
-#    url: jdbc:postgresql://62.148.227.113:5432/search_engine
+    #    url: jdbc:postgresql://62.148.227.113:5432/search_engine
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -14,12 +14,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        order_inserts: true
         jdbc:
           batch_size: 100
     hibernate:
-      ddl-auto: 'create-drop'
+      ddl-auto: none
     show-sql: false
-#    defer-datasource-initialization: true
+  #    defer-datasource-initialization: true
   mvc:
     pathmatch:
       matching-strategy: ant-path-matcher
@@ -28,7 +29,9 @@ indexing-settings:
   sites:
 #    - url: https://lenta.ru
 #      name: Лента.ру
-    - url: https://skillbox.ru
-      name: Skillbox
-#    - url: https://www.playback.ru
-#      name: PlayBack.Ru
+#    - url: https://skillbox.ru
+#      name: Skillbox
+    - url: https://www.playback.ru
+      name: PlayBack.Ru
+#    - url: http://radiomv.ru
+#      name: MiliceyskayaVolna

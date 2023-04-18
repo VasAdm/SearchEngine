@@ -1,18 +1,19 @@
-package searchengine.controller;
+package searchengine.controllers;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import searchengine.config.SpringfoxConfig;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.model.page.PageEntity;
-import searchengine.model.site.SiteEntity;
 import searchengine.services.indexing.IndexingService;
-import searchengine.services.page.PageService;
-import searchengine.services.site.SiteService;
+import searchengine.repository.PageService;
+import searchengine.repository.SiteService;
 import searchengine.services.statistic.StatisticsService;
 
 @RestController
@@ -39,12 +40,20 @@ public class ApiController {
     }
 
     @GetMapping("/startIndexing")
-    @ApiOperation("operation for starting indexing")
+    @ApiOperation("operation for start indexing")
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
-        return ResponseEntity.ok(indexingService.getIndexingStatus());
+        return ResponseEntity.ok(indexingService.startIndexing());
     }
-    @GetMapping("/getPage")
-    public ResponseEntity<Boolean> getPage(@RequestParam(name = "path") String path) {
-        return ResponseEntity.ok(pageService.isAlreadyExist(path, siteService.getSiteByUrl("https://www.playback.ru")));
+
+    @GetMapping("/stopIndexing")
+    @ApiOperation("operation for stop indexing")
+    public ResponseEntity<IndexingStatusResponse> stopIndexing() {
+        return ResponseEntity.ok(indexingService.stopIndexing());
+    }
+
+    @PostMapping(value = "/indexPage")
+    @ApiOperation("operation for indexing only one web page")
+    public ResponseEntity<IndexingStatusResponse> indexPage(@RequestBody String url) {
+        return ResponseEntity.ok(indexingService.indexPage(url));
     }
 }

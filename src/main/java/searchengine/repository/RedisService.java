@@ -4,17 +4,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Repository;
+import searchengine.repository.RedisRepository;
 
 import javax.annotation.PostConstruct;
 import java.util.Collection;
 
 @Repository
-public class RedisRepository {
-    private final RedisTemplate<Integer, String> redisTemplate;
-    private SetOperations<Integer, String> setOperations;
+public class RedisService implements RedisRepository {
+    private final RedisTemplate<String, String> redisTemplate;
+    private SetOperations<String, String> setOperations;
 
     @Autowired
-    public RedisRepository(RedisTemplate<Integer, String> redisTemplate) {
+    public RedisService(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -23,15 +24,15 @@ public class RedisRepository {
         setOperations = redisTemplate.opsForSet();
     }
 
-    public Long add(Integer siteUrl, String pageUrl) {
+    public synchronized Long add(String siteUrl, String pageUrl) {
         return setOperations.add(siteUrl, pageUrl);
     }
 
-    public Long deleteAll(Collection<Integer> keys) {
+    public Long deleteAll(Collection<String> keys) {
         return redisTemplate.delete(keys);
     }
 
-    public Boolean deleteByKey(Integer key) {
+    public Boolean deleteByKey(String key) {
         return redisTemplate.delete(key);
     }
 }
