@@ -1,43 +1,48 @@
 package searchengine.services.indexing;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import searchengine.IndexingThreadHolder;
-import searchengine.model.page.PageEntity;
-import searchengine.model.site.Site;
-import searchengine.model.site.SitesList;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.indexing.IndexingStatusResponseError;
-import searchengine.services.parsing.PageParser;
-import searchengine.services.parsing.TaskRunner;
+import searchengine.model.page.PageEntity;
 import searchengine.model.site.SiteEntity;
-import searchengine.repository.RedisService;
+import searchengine.model.site.SitesList;
 import searchengine.model.site.StatusType;
 import searchengine.repository.PageService;
 import searchengine.repository.SiteService;
+import searchengine.services.parsing.PageParser;
+import searchengine.services.parsing.TaskRunner;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
-
     private final SiteService siteService;
     private final PageService pageService;
-    private final RedisService redisService;
 
-//    private int coreCount = Runtime.getRuntime().availableProcessors();
-//    private ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
+    private final int coreCount = Runtime.getRuntime().availableProcessors();
+    private final ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
+
+    private final List<TaskRunner> taskRunnerList = new ArrayList<>();
+
+    @Autowired
+    public IndexingServiceImpl(SitesList sites, SiteService siteService, PageService pageService) {
+        this.sites = sites;
+        this.siteService = siteService;
+        this.pageService = pageService;
+    }
 
     @Override
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
@@ -53,8 +58,6 @@ public class IndexingServiceImpl implements IndexingService {
         } else {
 
             siteService.deleteAll();
-//            pageService.deleteAll();
-            redisService.deleteAll(sites.getSites().stream().map(Site::getUrl).toList());
             siteEntities.clear();
 
             sites.getSites().forEach(site -> {
@@ -64,14 +67,12 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatus(StatusType.INDEXING);
                 siteEntity.setStatusTime(LocalDateTime.now());
 
-                siteEntities.add(siteService.save(siteEntity));
+                TaskRunner task = new TaskRunner(siteService.save(siteEntity));
+                executorService.execute(task);
+                taskRunnerList.add(task);
             });
 
-            TaskRunner taskRunner = new TaskRunner(siteEntities);
-            Thread indexingThread = new Thread(taskRunner);
-            IndexingThreadHolder.setThread(taskRunner);
-            IndexingThreadHolder.setSiteSet(siteEntities);
-            indexingThread.start();
+            executorService.shutdown();
 
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
@@ -79,12 +80,13 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        TaskRunner taskRunner = IndexingThreadHolder.getTaskRunner();
-        if (!taskRunner.isAlive()) {
+        if (executorService.isShutdown()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
-            Set<SiteEntity> siteEntities = IndexingThreadHolder.getSiteSet();
-            taskRunner.stop();
+            Set<SiteEntity> siteEntities = taskRunnerList.stream().map(TaskRunner::getSiteEntity).collect(Collectors.toSet());
+
+            executorService.shutdownNow();
+
             siteEntities.stream()
                     .filter(siteEntity -> siteEntity.getStatus().equals(StatusType.INDEXING))
                     .forEach(siteEntity -> {
@@ -99,7 +101,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> indexPage(String url) {
-        String regex = "^https?:\\/\\/[a-zA-Zа-яА-Я\\._-]*\\.[\\w]{2,3}";
+        String regex = "^https?://[a-zA-Zа-яА-Я._-]*.\\w{2,3}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(url);
         String subString = "";

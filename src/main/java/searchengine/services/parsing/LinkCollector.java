@@ -4,11 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import searchengine.RepoHolder;
 import searchengine.model.page.Page;
 import searchengine.model.page.PageEntity;
 import searchengine.model.site.SiteEntity;
-import searchengine.repository.RedisRepository;
-import searchengine.RepoHolder;
 import searchengine.repository.PageService;
 import searchengine.repository.SiteService;
 
@@ -21,27 +20,27 @@ public class LinkCollector {
 
 	private final String url;
 	private final SiteEntity site;
-	private final RedisRepository redisRepository;
+	private final Set<String> pageSet;
+//	private final RedisRepository redisRepository;
 	private final PageService pageService;
 	private final SiteService siteService;
-//	private final List<Page> pageList;
 
 
-	public LinkCollector(String url, SiteEntity site) {
+	public LinkCollector(String url, SiteEntity site, Set<String> pageSet) {
 		this.url = url;
 		this.site = site;
-		this.redisRepository = RepoHolder.getRedisRepository();
+		this.pageSet = pageSet;
+//		this.redisRepository = RepoHolder.getRedisRepository();
 		this.pageService = RepoHolder.getPageService();
 		this.siteService = RepoHolder.getSiteService();
-//		this.pageList = new ArrayList<>();
 	}
 
 	public Map<String, SiteEntity> collectLinks() {
-		List<PageEntity> entityList = new ArrayList<>();
 		Map<String, SiteEntity> result = new HashMap<>();
+		List<PageEntity> entityList = new ArrayList<>();
 		Page page = new PageParser(url, site).parsePage();
 
-		if (redisRepository.add(site.getUrl(), page.getPath()) == 1) {
+		if (pageSet.add(site.getUrl() + page.getPath())) {
 			entityList.add(page.getPageEntity());
 		}
 
@@ -53,7 +52,7 @@ public class LinkCollector {
 
 
 			boolean isContainRoot = absPath.contains(page.getSite().getUrl());
-			boolean isAlreadyAdded = redisRepository.add(site.getUrl(), relPath) == 0;
+			boolean isAlreadyAdded = !pageSet.add(site.getUrl() + relPath);
 			boolean isAnchor = relPath.contains("#");
 
 			boolean isFit =
@@ -63,7 +62,6 @@ public class LinkCollector {
 
 			if (isFit) {
 				Page tmpPage = new PageParser(absPath, site).parsePage();
-//				pageList.add(tmpPage);
 				PageEntity newPage = tmpPage.getPageEntity();
 
 				if (!Objects.equals(newPage.getContent(), "")) {
