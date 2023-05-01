@@ -1498,3 +1498,6 @@ Caused by: java.lang.OutOfMemoryError: Java heap space
 2023-05-01 22:38:45,725 WARN org.hibernate.engine.loading.internal.CollectionLoadContext [ForkJoinPool-2-worker-12] HHH000160: On CollectionLoadContext#cleanup, localLoadingCollectionKeys contained [1] entries
 2023-05-01 22:39:05,773 WARN org.hibernate.engine.loading.internal.LoadContexts [ForkJoinPool-2-worker-4] HHH000100: Fail-safe cleanup (collections) : org.hibernate.engine.loading.internal.CollectionLoadContext@4cb9f976<rs=HikariProxyResultSet@442841271 wrapping org.postgresql.jdbc.PgResultSet@68dbc396>
 2023-05-01 22:39:05,775 WARN org.hibernate.engine.loading.internal.CollectionLoadContext [ForkJoinPool-2-worker-4] HHH000160: On CollectionLoadContext#cleanup, localLoadingCollectionKeys contained [1] entries
+2023-05-01 22:41:13,490 INFO org.springframework.orm.jpa.AbstractEntityManagerFactoryBean [SpringApplicationShutdownHook] Closing JPA EntityManagerFactory for persistence unit 'default'
+2023-05-01 22:41:13,492 INFO com.zaxxer.hikari.HikariDataSource [SpringApplicationShutdownHook] HikariPool-1 - Shutdown initiated...
+2023-05-01 22:41:13,495 INFO com.zaxxer.hikari.HikariDataSource [SpringApplicationShutdownHook] HikariPool-1 - Shutdown completed.
