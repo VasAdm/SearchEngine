@@ -1496,3 +1496,5 @@ Caused by: org.postgresql.util.PSQLException: Недостаточно памя�
 Caused by: java.lang.OutOfMemoryError: Java heap space
 2023-05-01 22:38:45,724 WARN org.hibernate.engine.loading.internal.LoadContexts [ForkJoinPool-2-worker-12] HHH000100: Fail-safe cleanup (collections) : org.hibernate.engine.loading.internal.CollectionLoadContext@1ae9416c<rs=HikariProxyResultSet@1721526541 wrapping org.postgresql.jdbc.PgResultSet@145e6dff>
 2023-05-01 22:38:45,725 WARN org.hibernate.engine.loading.internal.CollectionLoadContext [ForkJoinPool-2-worker-12] HHH000160: On CollectionLoadContext#cleanup, localLoadingCollectionKeys contained [1] entries
+2023-05-01 22:39:05,773 WARN org.hibernate.engine.loading.internal.LoadContexts [ForkJoinPool-2-worker-4] HHH000100: Fail-safe cleanup (collections) : org.hibernate.engine.loading.internal.CollectionLoadContext@4cb9f976<rs=HikariProxyResultSet@442841271 wrapping org.postgresql.jdbc.PgResultSet@68dbc396>
+2023-05-01 22:39:05,775 WARN org.hibernate.engine.loading.internal.CollectionLoadContext [ForkJoinPool-2-worker-4] HHH000160: On CollectionLoadContext#cleanup, localLoadingCollectionKeys contained [1] entries
