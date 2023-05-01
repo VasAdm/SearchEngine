@@ -1,7 +1,7 @@
 package searchengine.services.parsing;
 
 import searchengine.model.site.SiteEntity;
-import searchengine.services.RepoHolder;
+import searchengine.RepoHolder;
 import searchengine.model.site.StatusType;
 import searchengine.repository.SiteService;
 

@@ -2,58 +2,56 @@ package searchengine.controllers;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import searchengine.config.SpringfoxConfig;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.indexing.IndexingService;
-import searchengine.repository.PageService;
-import searchengine.repository.SiteService;
 import searchengine.services.statistic.StatisticsService;
 
 @RestController
 @RequestMapping("/api")
 @Api(tags = {SpringfoxConfig.SEARCHENGINE_TAG})
 public class ApiController {
-    private final PageService pageService;
-    private final SiteService siteService;
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
+    Logger logger = LoggerFactory.getLogger(ApiController.class);
 
     @Autowired
-    public ApiController(StatisticsService statisticsService, IndexingService indexingService, PageService pageService, SiteService siteService) {
+    public ApiController(StatisticsService statisticsService, IndexingService indexingService) {
         this.statisticsService = statisticsService;
         this.indexingService = indexingService;
-        this.pageService = pageService;
-        this.siteService = siteService;
     }
 
     @GetMapping("/statistics")
     @ApiOperation("operation to get statistic of websites")
     public ResponseEntity<StatisticsResponse> statistics() {
-        return ResponseEntity.ok(statisticsService.getStatistics());
+        logger.info("A request to get statistics has been received");
+        return statisticsService.getStatistics();
     }
 
     @GetMapping("/startIndexing")
-    @ApiOperation("operation for start indexing")
+    @ApiOperation("operation to start indexing")
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
-        return ResponseEntity.ok(indexingService.startIndexing());
+        logger.info("A request to start indexing has been received");
+        return indexingService.startIndexing();
     }
 
     @GetMapping("/stopIndexing")
-    @ApiOperation("operation for stop indexing")
+    @ApiOperation("operation to stop indexing")
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        return ResponseEntity.ok(indexingService.stopIndexing());
+        logger.info("A request to stop indexing has been received");
+        return indexingService.stopIndexing();
     }
 
     @PostMapping(value = "/indexPage")
-    @ApiOperation("operation for indexing only one web page")
+    @ApiOperation("operation to indexing a web page")
     public ResponseEntity<IndexingStatusResponse> indexPage(@RequestBody String url) {
-        return ResponseEntity.ok(indexingService.indexPage(url));
+        logger.info("A request to index page - " + url + ", has been received");
+        return indexingService.indexPage(url);
     }
 }

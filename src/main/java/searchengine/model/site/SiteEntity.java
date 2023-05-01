@@ -54,7 +54,7 @@ public class SiteEntity implements Serializable {
     @ApiModelProperty("name of website")
     private String name;
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PageEntity> pageEntities = new ArrayList<>();
 
     @OneToOne(mappedBy = "siteEntity")

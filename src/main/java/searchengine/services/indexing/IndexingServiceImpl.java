@@ -1,7 +1,10 @@
 package searchengine.services.indexing;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import searchengine.IndexingThreadHolder;
 import searchengine.model.page.PageEntity;
 import searchengine.model.site.Site;
 import searchengine.model.site.SitesList;
@@ -18,20 +21,26 @@ import searchengine.repository.SiteService;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
+
     private final SiteService siteService;
     private final PageService pageService;
     private final RedisService redisService;
 
+//    private int coreCount = Runtime.getRuntime().availableProcessors();
+//    private ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
+
     @Override
-    public IndexingStatusResponse startIndexing() {
+    public ResponseEntity<IndexingStatusResponse> startIndexing() {
         Set<SiteEntity> siteEntities = new HashSet<>();
 
         sites.getSites().forEach(s -> {
@@ -40,11 +49,11 @@ public class IndexingServiceImpl implements IndexingService {
         });
 
         if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
-            return new IndexingStatusResponseError(false, "Индексаци уже запущена");
+            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци уже запущена"));
         } else {
 
             siteService.deleteAll();
-            pageService.deleteAll();
+//            pageService.deleteAll();
             redisService.deleteAll(sites.getSites().stream().map(Site::getUrl).toList());
             siteEntities.clear();
 
@@ -64,15 +73,15 @@ public class IndexingServiceImpl implements IndexingService {
             IndexingThreadHolder.setSiteSet(siteEntities);
             indexingThread.start();
 
-            return new IndexingStatusResponse(true);
+            return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }
 
     @Override
-    public IndexingStatusResponse stopIndexing() {
+    public ResponseEntity<IndexingStatusResponse> stopIndexing() {
         TaskRunner taskRunner = IndexingThreadHolder.getTaskRunner();
         if (!taskRunner.isAlive()) {
-            return new IndexingStatusResponseError(false, "Индексаци не запущена");
+            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
             Set<SiteEntity> siteEntities = IndexingThreadHolder.getSiteSet();
             taskRunner.stop();
@@ -84,12 +93,12 @@ public class IndexingServiceImpl implements IndexingService {
                         siteEntity.setLastError("Индексация остановлена пользователем");
                         siteService.save(siteEntity);
                     });
-            return new IndexingStatusResponse(true);
+            return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }
 
     @Override
-    public IndexingStatusResponse indexPage(String url) {
+    public ResponseEntity<IndexingStatusResponse> indexPage(String url) {
         String regex = "^https?:\\/\\/[a-zA-Zа-яА-Я\\._-]*\\.[\\w]{2,3}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(url);
@@ -99,13 +108,13 @@ public class IndexingServiceImpl implements IndexingService {
         }
 
         if (subString.isEmpty()) {
-            return new IndexingStatusResponseError(false, "Переданная строка не является ссылкой");
+            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Переданная строка не является ссылкой"));
         }
         SiteEntity site = siteService.getSiteByUrl(subString);
         if (site == null) {
-            return new IndexingStatusResponseError(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле"));
         }
-        PageEntity page = pageService.getPageByPathAndSite(url.substring(subString.length(),url.length()), site);
+        PageEntity page = pageService.getPageByPathAndSite(url.substring(subString.length()), site);
         PageEntity newPage = new PageParser(url, site).parsePage().getPageEntity();
         if (page == null) {
             page = newPage;
@@ -117,6 +126,6 @@ public class IndexingServiceImpl implements IndexingService {
             page.setIndex(newPage.getIndex());
         }
         pageService.save(page);
-        return new IndexingStatusResponse(true);
+        return ResponseEntity.ok(new IndexingStatusResponse(true));
     }
 }

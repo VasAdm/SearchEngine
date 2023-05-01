@@ -1,4 +1,4 @@
-package searchengine.services.indexing;
+package searchengine;
 
 import searchengine.services.parsing.TaskRunner;
 import searchengine.model.site.SiteEntity;

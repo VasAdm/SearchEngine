@@ -8,7 +8,7 @@ import searchengine.model.page.Page;
 import searchengine.model.page.PageEntity;
 import searchengine.model.site.SiteEntity;
 import searchengine.repository.RedisRepository;
-import searchengine.services.RepoHolder;
+import searchengine.RepoHolder;
 import searchengine.repository.PageService;
 import searchengine.repository.SiteService;
 
