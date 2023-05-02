@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import searchengine.RepoHolder;
 import searchengine.model.page.Page;
 import searchengine.model.page.PageEntity;
@@ -21,16 +23,16 @@ public class LinkCollector {
 	private final String url;
 	private final SiteEntity site;
 	private final Set<String> pageSet;
-//	private final RedisRepository redisRepository;
 	private final PageService pageService;
 	private final SiteService siteService;
+
+	private final Logger logger = LoggerFactory.getLogger(LinkCollector.class);
 
 
 	public LinkCollector(String url, SiteEntity site, Set<String> pageSet) {
 		this.url = url;
 		this.site = site;
 		this.pageSet = pageSet;
-//		this.redisRepository = RepoHolder.getRedisRepository();
 		this.pageService = RepoHolder.getPageService();
 		this.siteService = RepoHolder.getSiteService();
 	}

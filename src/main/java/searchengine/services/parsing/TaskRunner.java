@@ -1,5 +1,7 @@
 package searchengine.services.parsing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import searchengine.model.site.SiteEntity;
 
 import java.util.Collections;
@@ -11,16 +13,23 @@ public class TaskRunner implements Runnable {
     private final SiteEntity siteEntity;
     private final Set<String> pageSet = Collections.synchronizedSet(new HashSet<>());
 
+    private final ForkJoinPool task;
+
+    private final Logger logger = LoggerFactory.getLogger(TaskRunner.class);
+
+
+
     public TaskRunner(SiteEntity siteEntity) {
         this.siteEntity = siteEntity;
+        this.task = new ForkJoinPool();
     }
 
     @Override
     public void run() {
-        try (ForkJoinPool task = new ForkJoinPool()) {
+        try (task) {
             task.execute(new WebParser(siteEntity.getUrl(), siteEntity, pageSet));
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.error(ex.getLocalizedMessage());
         }
     }
 
@@ -28,4 +37,7 @@ public class TaskRunner implements Runnable {
         return siteEntity;
     }
 
+    public ForkJoinPool getTask() {
+        return task;
+    }
 }

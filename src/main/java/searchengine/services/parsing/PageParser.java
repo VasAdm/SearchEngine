@@ -3,14 +3,20 @@ package searchengine.services.parsing;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import searchengine.model.page.Page;
 import searchengine.model.site.SiteEntity;
 
+import java.io.IOException;
 import java.util.Objects;
 
 public class PageParser {
-    private String url;
-    private SiteEntity site;
+    private final String url;
+    private final SiteEntity site;
+
+    private final Logger logger = LoggerFactory.getLogger(PageParser.class);
+
 
     public PageParser(String url, SiteEntity site) {
         this.url = url;
@@ -48,8 +54,8 @@ public class PageParser {
                 page.setSite(site);
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (InterruptedException | IOException ex) {
+            logger.warn(ex.getLocalizedMessage());
         }
 
         return page;

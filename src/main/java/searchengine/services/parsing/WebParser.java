@@ -1,6 +1,8 @@
 package searchengine.services.parsing;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import searchengine.model.site.SiteEntity;
 
 import java.util.Map;
@@ -12,6 +14,8 @@ public class WebParser extends RecursiveAction {
     private final String url;
     private final SiteEntity siteEntity;
     private final Set<String> pageSet;
+
+    private final Logger logger = LoggerFactory.getLogger(WebParser.class);
 
     @Override
     protected void compute() {
@@ -28,7 +32,7 @@ public class WebParser extends RecursiveAction {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.warn(ex.getMessage());
         }
     }
 }

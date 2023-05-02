@@ -2,7 +2,6 @@ package searchengine;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import searchengine.repository.RedisRepository;
 import searchengine.repository.PageService;
 import searchengine.repository.SiteService;
 
@@ -11,13 +10,11 @@ public class RepoHolder {
 
     private static PageService pageService;
     private static SiteService siteService;
-    private static RedisRepository redisRepository;
 
     @Autowired
-    public RepoHolder(SiteService siteService, PageService pageService, RedisRepository redisRepository) {
+    public RepoHolder(SiteService siteService, PageService pageService) {
         RepoHolder.siteService = siteService;
         RepoHolder.pageService = pageService;
-        RepoHolder.redisRepository = redisRepository;
     }
 
     public static PageService getPageService() {
@@ -26,9 +23,5 @@ public class RepoHolder {
 
     public static SiteService getSiteService() {
         return siteService;
-    }
-
-    public static RedisRepository getRedisRepository() {
-        return redisRepository;
     }
 }

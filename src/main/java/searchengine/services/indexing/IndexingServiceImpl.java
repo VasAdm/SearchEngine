@@ -1,5 +1,7 @@
 package searchengine.services.indexing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,7 +37,9 @@ public class IndexingServiceImpl implements IndexingService {
     private final int coreCount = Runtime.getRuntime().availableProcessors();
     private final ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
 
-    private final List<TaskRunner> taskRunnerList = new ArrayList<>();
+    private final List<TaskRunner> taskList = new ArrayList<>();
+    Logger logger = LoggerFactory.getLogger(IndexingServiceImpl.class);
+
 
     @Autowired
     public IndexingServiceImpl(SitesList sites, SiteService siteService, PageService pageService) {
@@ -69,7 +73,9 @@ public class IndexingServiceImpl implements IndexingService {
 
                 TaskRunner task = new TaskRunner(siteService.save(siteEntity));
                 executorService.execute(task);
-                taskRunnerList.add(task);
+                taskList.add(task);
+
+                logger.info("Parsing site - " + siteEntity.getName() + ": started");
             });
 
             executorService.shutdown();
@@ -80,12 +86,15 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        if (executorService.isShutdown()) {
+        if (taskList.isEmpty()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
-            Set<SiteEntity> siteEntities = taskRunnerList.stream().map(TaskRunner::getSiteEntity).collect(Collectors.toSet());
-
-            executorService.shutdownNow();
+            Set<SiteEntity> siteEntities = taskList.stream().map(TaskRunner::getSiteEntity).collect(Collectors.toSet());
+            taskList.forEach(taskRunner -> taskRunner.getTask().shutdownNow());
+            taskList.removeIf(taskRunner ->
+                    taskRunner.getTask().isQuiescent() ||
+                    taskRunner.getTask().isTerminated() ||
+                    taskRunner.getTask().isShutdown());
 
             siteEntities.stream()
                     .filter(siteEntity -> siteEntity.getStatus().equals(StatusType.INDEXING))
@@ -94,6 +103,7 @@ public class IndexingServiceImpl implements IndexingService {
                         siteEntity.setStatus(StatusType.FAILED);
                         siteEntity.setLastError("Индексация остановлена пользователем");
                         siteService.save(siteEntity);
+                        logger.info("Parsing site - " + siteEntity.getName() + ": stopped");
                     });
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
@@ -128,6 +138,7 @@ public class IndexingServiceImpl implements IndexingService {
             page.setIndex(newPage.getIndex());
         }
         pageService.save(page);
+        logger.info("Parsing page - " + page.getSite().getUrl() + page.getPath() + ": completed");
         return ResponseEntity.ok(new IndexingStatusResponse(true));
     }
 }
