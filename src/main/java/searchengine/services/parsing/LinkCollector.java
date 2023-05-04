@@ -7,9 +7,9 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import searchengine.RepoHolder;
-import searchengine.model.page.Page;
-import searchengine.model.page.PageEntity;
-import searchengine.model.site.SiteEntity;
+import searchengine.Page;
+import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 import searchengine.repository.PageService;
 import searchengine.repository.SiteService;
 

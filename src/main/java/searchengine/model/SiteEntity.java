@@ -1,4 +1,4 @@
-package searchengine.model.site;
+package searchengine.model;
 
 import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType;
 import io.swagger.annotations.ApiModel;
@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
-import searchengine.model.lemma.Lemma;
-import searchengine.model.page.PageEntity;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -58,5 +56,5 @@ public class SiteEntity implements Serializable {
     private List<PageEntity> pageEntities = new ArrayList<>();
 
     @OneToOne(mappedBy = "siteEntity")
-    private Lemma lemma;
+    private LemmaEntity lemmaEntity;
 }

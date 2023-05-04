@@ -5,8 +5,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import searchengine.model.page.Page;
-import searchengine.model.site.SiteEntity;
+import searchengine.Page;
+import searchengine.model.SiteEntity;
 
 import java.io.IOException;
 import java.util.Objects;

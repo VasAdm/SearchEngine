@@ -7,10 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.indexing.IndexingStatusResponseError;
-import searchengine.model.page.PageEntity;
-import searchengine.model.site.SiteEntity;
-import searchengine.model.site.SitesList;
-import searchengine.model.site.StatusType;
+import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
+import searchengine.config.SitesList;
+import searchengine.model.StatusType;
 import searchengine.repository.PageService;
 import searchengine.repository.SiteService;
 import searchengine.services.parsing.PageParser;
@@ -135,7 +135,7 @@ public class IndexingServiceImpl implements IndexingService {
             page.setCode(newPage.getCode());
             page.setSite(newPage.getSite());
             page.setPath(newPage.getPath());
-            page.setIndex(newPage.getIndex());
+            page.setIndexEntity(newPage.getIndexEntity());
         }
         pageService.save(page);
         logger.info("Parsing page - " + page.getSite().getUrl() + page.getPath() + ": completed");

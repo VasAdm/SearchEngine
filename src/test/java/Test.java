@@ -1,15 +1,7 @@
-package searchengine;
-
-import org.apache.lucene.morphology.LuceneMorphology;
-import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
-import searchengine.dto.indexing.IndexingStatusResponseError;
 import searchengine.services.lemmasScraper.LemmasScraper;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Test {
     public static void main(String[] args) throws IOException {

@@ -1,21 +1,25 @@
 package searchengine.services.parsing;
 
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import searchengine.model.site.SiteEntity;
+import searchengine.model.SiteEntity;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.RecursiveAction;
 
-@RequiredArgsConstructor
 public class WebParser extends RecursiveAction {
     private final String url;
     private final SiteEntity siteEntity;
     private final Set<String> pageSet;
 
-    private Logger logger = LoggerFactory.getLogger(WebParser.class);
+    private final Logger logger = LoggerFactory.getLogger(WebParser.class);
+
+    public WebParser(String url, SiteEntity siteEntity, Set<String> pageSet) {
+        this.url = url;
+        this.siteEntity = siteEntity;
+        this.pageSet = pageSet;
+    }
 
     @Override
     protected void compute() {

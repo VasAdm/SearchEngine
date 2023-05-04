@@ -1,7 +1,7 @@
-package searchengine.model.site;
+package searchengine.model;
 
 public enum StatusType {
     INDEXING,
     INDEXED,
-    FAILED;
+    FAILED
 }

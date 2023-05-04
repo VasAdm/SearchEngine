@@ -1,15 +1,11 @@
-package searchengine.model.page;
+package searchengine;
 
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jsoup.nodes.Document;
-import searchengine.model.site.SiteEntity;
-
-import javax.persistence.Column;
-import java.util.Objects;
+import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 
 @NoArgsConstructor
 @Getter

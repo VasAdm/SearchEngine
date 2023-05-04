@@ -3,8 +3,8 @@ package searchengine.services.parsing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import searchengine.RepoHolder;
-import searchengine.model.site.SiteEntity;
-import searchengine.model.site.StatusType;
+import searchengine.model.SiteEntity;
+import searchengine.model.StatusType;
 import searchengine.repository.SiteService;
 
 import java.time.LocalDateTime;

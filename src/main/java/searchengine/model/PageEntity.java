@@ -1,13 +1,10 @@
-package searchengine.model.page;
+package searchengine.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import searchengine.model.site.SiteEntity;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -42,6 +39,6 @@ public class PageEntity implements Serializable {
     private String content;
 
     @OneToOne(mappedBy = "pageEntity")
-    private searchengine.model.index.Index index;
+    private IndexEntity indexEntity;
 
 }
