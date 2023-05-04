@@ -72,7 +72,7 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatusTime(LocalDateTime.now());
 
                 TaskRunner task = new TaskRunner(siteService.save(siteEntity));
-                executorService.execute(task);
+                executorService.submit(task);
                 taskList.add(task);
 
                 logger.info("Parsing site - " + siteEntity.getName() + ": started");

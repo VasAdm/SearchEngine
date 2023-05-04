@@ -15,7 +15,7 @@ public class WebParser extends RecursiveAction {
     private final SiteEntity siteEntity;
     private final Set<String> pageSet;
 
-    private final Logger logger = LoggerFactory.getLogger(WebParser.class);
+    private Logger logger = LoggerFactory.getLogger(WebParser.class);
 
     @Override
     protected void compute() {
