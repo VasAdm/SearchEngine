@@ -1,42 +1,32 @@
 package searchengine.services.parsing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import searchengine.RepoHolder;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
-import searchengine.repository.SiteService;
+import searchengine.repository.PageRepository;
+import searchengine.repository.SiteRepository;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 
+@Slf4j
+@RequiredArgsConstructor
 public class TaskRunner implements Runnable {
-    private final SiteEntity siteEntity;
     private final Set<String> pageSet = Collections.synchronizedSet(new HashSet<>());
-    private final ForkJoinPool task;
-    private final Logger logger = LoggerFactory.getLogger(TaskRunner.class);
-
-    private final SiteService siteService;
-
-
-    public TaskRunner(SiteEntity siteEntity) {
-        this.siteEntity = siteEntity;
-        this.task = new ForkJoinPool();
-        this.siteService = RepoHolder.getSiteService();
-    }
+    private final SiteEntity siteEntity;
+    private final ForkJoinPool task = new ForkJoinPool();
+    private final SiteRepository siteRepository;
+    private final PageRepository pageRepository;
 
     @Override
     public void run() {
         try (task) {
-            task.invoke(new WebParser(siteEntity.getUrl(), siteEntity, pageSet));
-            siteEntity.setStatus(StatusType.INDEXED);
-            siteEntity.setStatusTime(LocalDateTime.now());
-            siteService.save(siteEntity);
+            WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, pageSet, true);
+            task.execute(webParser);
         } catch (Exception ex) {
-            logger.error(ex.getLocalizedMessage());
+            log.error(ex.getLocalizedMessage());
         }
     }
 

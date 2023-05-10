@@ -2,14 +2,14 @@ package searchengine;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import searchengine.repository.PageService;
-import searchengine.repository.SiteService;
+import searchengine.repository.PageRepository;
+import searchengine.repository.SiteRepository;
 
 @Component
 public class RepoHolder {
 
-    private static PageService pageService;
-    private static SiteService siteService;
+    private static PageRepository pageService;
+    private static SiteRepository siteService;
 
     @Autowired
     public RepoHolder(SiteService siteService, PageService pageService) {

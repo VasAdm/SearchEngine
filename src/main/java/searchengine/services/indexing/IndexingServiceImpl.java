@@ -1,26 +1,22 @@
 package searchengine.services.indexing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.indexing.IndexingStatusResponseError;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.config.SitesList;
 import searchengine.model.StatusType;
-import searchengine.repository.PageService;
-import searchengine.repository.SiteService;
-import searchengine.services.parsing.PageParser;
+import searchengine.repository.PageRepository;
+import searchengine.repository.SiteRepository;
+import searchengine.services.parsing.HtmlParser;
 import searchengine.services.parsing.TaskRunner;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
@@ -29,23 +25,21 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
-    private final SiteService siteService;
-    private final PageService pageService;
-
+    private final SiteRepository siteRepository;
+    private final PageRepository pageRepository;
     private final int coreCount = Runtime.getRuntime().availableProcessors();
     private final ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
-
     private final List<TaskRunner> taskList = new ArrayList<>();
-    Logger logger = LoggerFactory.getLogger(IndexingServiceImpl.class);
 
 
     @Autowired
-    public IndexingServiceImpl(SitesList sites, SiteService siteService, PageService pageService) {
+    public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository) {
         this.sites = sites;
-        this.siteService = siteService;
-        this.pageService = pageService;
+        this.siteRepository = siteRepository;
+        this.pageRepository = pageRepository;
     }
 
     @Override
@@ -53,15 +47,15 @@ public class IndexingServiceImpl implements IndexingService {
         Set<SiteEntity> siteEntities = new HashSet<>();
 
         sites.getSites().forEach(s -> {
-            SiteEntity site = siteService.getSiteByUrl(s.getUrl());
+            SiteEntity site = siteRepository.getByUrl(s.getUrl());
             if (site != null) siteEntities.add(site);
         });
 
         if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
-            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци уже запущена"));
+            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
 
-            siteService.deleteAll();
+            siteRepository.deleteAll();
             siteEntities.clear();
 
             sites.getSites().forEach(site -> {
@@ -71,11 +65,11 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatus(StatusType.INDEXING);
                 siteEntity.setStatusTime(LocalDateTime.now());
 
-                TaskRunner task = new TaskRunner(siteService.save(siteEntity));
+                TaskRunner task = new TaskRunner(siteRepository.save(siteEntity), siteRepository, pageRepository);
                 executorService.submit(task);
                 taskList.add(task);
 
-                logger.info("Parsing site - " + siteEntity.getName() + ": started");
+                log.info("Parsing site - " + siteEntity.getName() + ": started");
             });
 
             executorService.shutdown();
@@ -93,8 +87,8 @@ public class IndexingServiceImpl implements IndexingService {
             taskList.forEach(taskRunner -> taskRunner.getTask().shutdownNow());
             taskList.removeIf(taskRunner ->
                     taskRunner.getTask().isQuiescent() ||
-                    taskRunner.getTask().isTerminated() ||
-                    taskRunner.getTask().isShutdown());
+                            taskRunner.getTask().isTerminated() ||
+                            taskRunner.getTask().isShutdown());
 
             siteEntities.stream()
                     .filter(siteEntity -> siteEntity.getStatus().equals(StatusType.INDEXING))
@@ -102,8 +96,8 @@ public class IndexingServiceImpl implements IndexingService {
                         siteEntity.setStatusTime(LocalDateTime.now());
                         siteEntity.setStatus(StatusType.FAILED);
                         siteEntity.setLastError("Индексация остановлена пользователем");
-                        siteService.save(siteEntity);
-                        logger.info("Parsing site - " + siteEntity.getName() + ": stopped");
+                        siteRepository.save(siteEntity);
+                        log.info("Parsing site - " + siteEntity.getName() + ": stopped");
                     });
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
@@ -122,23 +116,17 @@ public class IndexingServiceImpl implements IndexingService {
         if (subString.isEmpty()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Переданная строка не является ссылкой"));
         }
-        SiteEntity site = siteService.getSiteByUrl(subString);
+        SiteEntity site = siteRepository.getByUrl(subString);
         if (site == null) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле"));
         }
-        PageEntity page = pageService.getPageByPathAndSite(url.substring(subString.length()), site);
-        PageEntity newPage = new PageParser(url, site).parsePage().getPageEntity();
-        if (page == null) {
-            page = newPage;
-        } else {
-            page.setContent(newPage.getContent());
-            page.setCode(newPage.getCode());
-            page.setSite(newPage.getSite());
-            page.setPath(newPage.getPath());
-            page.setIndexEntity(newPage.getIndexEntity());
-        }
-        pageService.save(page);
-        logger.info("Parsing page - " + page.getSite().getUrl() + page.getPath() + ": completed");
+        Optional<PageEntity> optionalPageEntity = pageRepository.findAllByPathAndSite_Id(url.substring(subString.length()), site.getId());
+        PageEntity page = new HtmlParser(url, site).getPage();
+        optionalPageEntity.ifPresent(pageEntity -> page.setId(pageEntity.getId()));
+
+        pageRepository.save(page);
+
+        log.info("Parsing page - " + page.getSite().getUrl() + page.getPath() + ": completed");
         return ResponseEntity.ok(new IndexingStatusResponse(true));
     }
 }

@@ -5,7 +5,7 @@ spring:
   datasource:
     username: SearchEngine_user
     password: SearchEngine_password
-    url: jdbc:mysql://62.148.227.113:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://10.0.200.10:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
   jpa:
     properties:
       hibernate:
@@ -14,22 +14,18 @@ spring:
         format_sql: true
     hibernate:
       ddl-auto: update
-    show-sql: true
-#    defer-datasource-initialization: true
+    show-sql: false
+  #    defer-datasource-initialization: true
   mvc:
     pathmatch:
       matching-strategy: ant-path-matcher
 
-#  sql:
-#    init:
-#      data-locations: classpath:data.sql
-#      mode: always
-
 indexing-settings:
   sites:
-    - url: https://lenta.ru
-      name: Лента.ру
-    - url: https://skillbox.ru
-      name: Skillbox
+#    - url: https://lenta.ru
+#      name: Лента.ру
+#    - url: https://skillbox.ru
+#      name: Skillbox
     - url: https://www.playback.ru
-      name: PlayBack.Ru
+      name: PlayBack.Ru.
+

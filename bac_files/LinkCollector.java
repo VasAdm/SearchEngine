@@ -1,46 +1,39 @@
 package searchengine.services.parsing;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import searchengine.RepoHolder;
 import searchengine.Page;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.repository.PageService;
-import searchengine.repository.SiteService;
+import searchengine.repository.PageRepository;
+import searchengine.repository.SiteRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class LinkCollector {
 
 	private final String url;
 	private final SiteEntity site;
 	private final Set<String> pageSet;
-	private final PageService pageService;
-	private final SiteService siteService;
+	private final PageRepository pageRepository;
+	private final SiteRepository siteRepository;
 
 	private final Logger logger = LoggerFactory.getLogger(LinkCollector.class);
 
 
-	public LinkCollector(String url, SiteEntity site, Set<String> pageSet) {
-		this.url = url;
-		this.site = site;
-		this.pageSet = pageSet;
-		this.pageService = RepoHolder.getPageService();
-		this.siteService = RepoHolder.getSiteService();
-	}
-
 	public Map<String, SiteEntity> collectLinks() {
 		Map<String, SiteEntity> result = new HashMap<>();
 		List<PageEntity> entityList = new ArrayList<>();
-		Page page = new PageParser(url, site).parsePage();
+		Page page = new HtmlParser(url, site).parsePage();
 
 		if (pageSet.add(site.getUrl() + page.getPath())) {
 			entityList.add(page.getPageEntity());
@@ -63,7 +56,7 @@ public class LinkCollector {
 							!isAnchor;
 
 			if (isFit) {
-				Page tmpPage = new PageParser(absPath, site).parsePage();
+				Page tmpPage = new HtmlParser(absPath, site).parsePage();
 				PageEntity newPage = tmpPage.getPageEntity();
 
 				if (!Objects.equals(newPage.getContent(), "")) {
@@ -73,10 +66,10 @@ public class LinkCollector {
 			}
 		}
 
-		pageService.saveAll(entityList);
+		pageRepository.saveAll(entityList);
 		entityList.clear();
 		site.setStatusTime(LocalDateTime.now());
-		siteService.save(site);
+		siteRepository.save(site);
 
 		return result;
 	}

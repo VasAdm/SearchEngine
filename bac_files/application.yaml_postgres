@@ -8,23 +8,18 @@ spring:
     url: jdbc:postgresql://10.0.200.10:5432/search_engine
     #    url: jdbc:postgresql://62.148.227.113:5432/search_engine
     driver-class-name: org.postgresql.Driver
-#    test-while-idle: true
-#    validation-query: SELECT 1;
-#    time-between-eviction-runs-millis: 60000
-#    remove-abandoned: true
-#    remove-abandoned-timeout: 60
-#    hikari:
-#      idle-timeout: 600000
-#      validationTimeout: 300000
-#      connectionTimeout: 30000
-#      idleTimeout: 600000
-#      maxLifetime: 1800000
-  flyway:
-    enabled: true
-    user: postgres
-    password: postgres
-    schemas: public
-    url: jdbc:postgresql://10.0.200.10:5432/search_engine
+    test-while-idle: true
+    validation-query: SELECT 1;
+    time-between-eviction-runs-millis: 60000
+    remove-abandoned: true
+    remove-abandoned-timeout: 60
+    hikari:
+      idle-timeout: 600000
+      validationTimeout: 300000
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+
   jpa:
     open-in-view: false
     properties:
