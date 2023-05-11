@@ -3,11 +3,14 @@ package searchengine.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
-import javax.persistence.*;
 import java.io.Serializable;
+import java.util.List;
 
 
 @Entity
@@ -21,8 +24,9 @@ public class PageEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "site_id", nullable = false, referencedColumnName = "id")
+    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private SiteEntity site;
 
@@ -38,7 +42,8 @@ public class PageEntity implements Serializable {
     @ApiModelProperty("content of webpage")
     private String content;
 
-    @OneToOne(mappedBy = "pageEntity")
-    private IndexEntity indexEntity;
+    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE)
+    @LazyCollection(LazyCollectionOption.EXTRA)
+    private List<IndexEntity> indexEntities;
 
 }

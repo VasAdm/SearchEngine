@@ -3,13 +3,13 @@ package searchengine.model;
 import com.vladmihalcea.hibernate.type.basic.PostgreSQLEnumType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.dialect.MySQL8Dialect;
 
-import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,10 +20,6 @@ import java.util.List;
 @Setter
 @ApiModel(description = "entity representing a website")
 @Table(name = "sites")
-@TypeDef(
-        name = "status_type",
-        typeClass = PostgreSQLEnumType.class
-)
 public class SiteEntity implements Serializable {
 
     @Id
@@ -33,8 +29,8 @@ public class SiteEntity implements Serializable {
 
     @ApiModelProperty("indexing status")
     @Enumerated(EnumType.STRING)
-    @Type(type = "status_type")
-    @Column(name = "status")
+    @Type(PostgreSQLEnumType.class)
+    @Column(name = "status", columnDefinition = "status_type", nullable = false)
     private StatusType status;
 
     @Column(name = "status_time", nullable = false)
@@ -53,9 +49,11 @@ public class SiteEntity implements Serializable {
     @ApiModelProperty("name of website")
     private String name;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "site", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
+    @LazyCollection(LazyCollectionOption.EXTRA)
     private List<PageEntity> pageEntities = new ArrayList<>();
 
-    @OneToOne(mappedBy = "siteEntity")
-    private LemmaEntity lemmaEntity;
+    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
+    @LazyCollection(LazyCollectionOption.EXTRA)
+    private List<LemmaEntity> lemmaEntities;
 }

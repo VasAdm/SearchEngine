@@ -17,7 +17,10 @@ import searchengine.services.parsing.TaskRunner;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,9 +31,7 @@ public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
-    private final int coreCount = Runtime.getRuntime().availableProcessors();
-    private final ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
-    private final List<RunnableFuture<Integer>> taskList = new ArrayList<>();
+    private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
 
 
     @Autowired
@@ -43,6 +44,8 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
         Set<SiteEntity> siteEntities = new HashSet<>();
+        int coreCount = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
 
         sites.getSites().forEach(s -> {
             SiteEntity site = siteRepository.getByUrl(s.getUrl());
@@ -61,17 +64,15 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setUrl(site.getUrl());
                 siteEntity.setStatus(StatusType.INDEXING);
                 siteEntity.setStatusTime(LocalDateTime.now());
-
-//                TaskRunner task = new TaskRunner(siteRepository.save(siteEntity), siteRepository, pageRepository);
-
                 siteEntity = siteRepository.save(siteEntity);
+
                 RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository, pageRepository), siteEntity.getId());
-                taskList.add(task);
+                taskList.put(siteEntity, task);
             });
 
-            taskList.forEach(executorService::execute);
+            taskList.values().forEach(executorService::execute);
 
-            ResultCheckerExample resultCheckerExample = new ResultCheckerExample(taskList);
+            ResultCheckerExample resultCheckerExample = new ResultCheckerExample(taskList, siteRepository);
 
             executorService.execute(resultCheckerExample);
 
@@ -86,39 +87,8 @@ public class IndexingServiceImpl implements IndexingService {
         if (taskList.isEmpty()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
-//            Set<SiteEntity> siteEntities = taskList.stream().map(TaskRunner::getSiteEntity).collect(Collectors.toSet());
-//            taskList.forEach(taskRunner -> taskRunner.getTask().shutdownNow());
-//            taskList.removeIf(taskRunner ->
-//                    taskRunner.getTask().isQuiescent() ||
-//                            taskRunner.getTask().isTerminated() ||
-//                            taskRunner.getTask().isShutdown());
-//
-//            siteEntities.stream()
-//                    .filter(siteEntity -> siteEntity.getStatus().equals(StatusType.INDEXING))
-//                    .forEach(siteEntity -> {
-//                        siteEntity.setStatusTime(LocalDateTime.now());
-//                        siteEntity.setStatus(StatusType.FAILED);
-//                        siteEntity.setLastError("Индексация остановлена пользователем");
-//                        siteRepository.save(siteEntity);
-//                        log.info("Parsing site - " + siteEntity.getName() + ": stopped");
-//                    });
+            taskList.values().forEach(task -> task.cancel(true));
 
-
-            taskList.forEach(task -> {
-                try {
-                    Optional<SiteEntity> siteEntity = siteRepository.find(task.get());
-                    if (siteEntity.isPresent()) {
-                        SiteEntity site = siteEntity.get();
-                        site.setStatus(StatusType.FAILED);
-                        site.setLastError("Индексация остановлена пользователем");
-                        site.setStatusTime(LocalDateTime.now());
-                        siteRepository.save(site);
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    log.error(e.getLocalizedMessage());
-                }
-                task.cancel(true);
-            });
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }
