@@ -6,12 +6,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import searchengine.Page;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
