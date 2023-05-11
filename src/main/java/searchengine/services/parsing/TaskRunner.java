@@ -1,6 +1,5 @@
 package searchengine.services.parsing;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import searchengine.model.SiteEntity;
 import searchengine.repository.PageRepository;
@@ -12,29 +11,24 @@ import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 
 @Slf4j
-@RequiredArgsConstructor
 public class TaskRunner implements Runnable {
     private final Set<String> pageSet = Collections.synchronizedSet(new HashSet<>());
     private final SiteEntity siteEntity;
-    private final ForkJoinPool task = new ForkJoinPool();
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
+    public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository) {
+        this.siteEntity = siteEntity;
+        this.siteRepository = siteRepository;
+        this.pageRepository = pageRepository;
+    }
 
     @Override
     public void run() {
-        try (task) {
+        try (ForkJoinPool task = new ForkJoinPool()) {
             WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, pageSet, true);
             task.execute(webParser);
         } catch (Exception ex) {
             log.error(ex.getLocalizedMessage());
         }
-    }
-
-    public SiteEntity getSiteEntity() {
-        return siteEntity;
-    }
-
-    public ForkJoinPool getTask() {
-        return task;
     }
 }
