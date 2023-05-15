@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class WebParser extends RecursiveAction {
-    //    private static final int dbSaveCounter = 100;
     private final SiteEntity siteEntity;
     private final String path;
     private final Set<String> pageSet;
@@ -54,9 +53,9 @@ public class WebParser extends RecursiveAction {
                         .collect(Collectors.toSet());
                 tasks.forEach(ForkJoinTask::join);
 
-                if (isRoot() && isNotFailed()) {
-                    indexed();
-                }
+//                if (isRoot() && isNotFailed()) {
+//                    indexed();
+//                }
             }
         }
     }
@@ -82,9 +81,9 @@ public class WebParser extends RecursiveAction {
         return root;
     }
 
-    protected void indexed() {
-        siteEntity.setStatusTime(LocalDateTime.now());
-        siteEntity.setStatus(StatusType.INDEXED);
-        siteRepository.save(siteEntity);
-    }
+//    protected void indexed() {
+//        siteEntity.setStatusTime(LocalDateTime.now());
+//        siteEntity.setStatus(StatusType.INDEXED);
+//        siteRepository.save(siteEntity);
+//    }
 }

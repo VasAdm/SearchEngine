@@ -44,7 +44,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
         Set<SiteEntity> siteEntities = new HashSet<>();
-        int coreCount = Runtime.getRuntime().availableProcessors();
+        int coreCount = (Runtime.getRuntime().availableProcessors() - 1) / sites.getSites().size();
         ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
 
         sites.getSites().forEach(s -> {
@@ -56,7 +56,7 @@ public class IndexingServiceImpl implements IndexingService {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
 
-            siteRepository.deleteAll();
+            siteRepository.deleteAll(siteEntities);
 
             sites.getSites().forEach(site -> {
                 SiteEntity siteEntity = new SiteEntity();
@@ -66,15 +66,15 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatusTime(LocalDateTime.now());
                 siteEntity = siteRepository.save(siteEntity);
 
-                RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository, pageRepository), siteEntity.getId());
+                RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository, pageRepository, coreCount), siteEntity.getId());
                 taskList.put(siteEntity, task);
             });
 
             taskList.values().forEach(executorService::execute);
 
-            ResultCheckerExample resultCheckerExample = new ResultCheckerExample(taskList, siteRepository);
+            ResultChecker resultChecker = new ResultChecker(taskList, siteRepository);
 
-            executorService.execute(resultCheckerExample);
+            executorService.execute(resultChecker);
 
             executorService.shutdown();
 

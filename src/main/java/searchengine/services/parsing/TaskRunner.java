@@ -16,15 +16,17 @@ public class TaskRunner implements Runnable {
     private final SiteEntity siteEntity;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
-    public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository) {
+    private final int coreCount;
+    public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, int coreCount) {
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
+        this.coreCount = coreCount;
     }
 
     @Override
     public void run() {
-        try (ForkJoinPool task = new ForkJoinPool()) {
+        try (ForkJoinPool task = new ForkJoinPool(coreCount)) {
             WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, pageSet, true);
             task.execute(webParser);
         } catch (Exception ex) {
