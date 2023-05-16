@@ -10,6 +10,7 @@ import searchengine.dto.indexing.IndexingStatusResponseError;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
+import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 import searchengine.services.parsing.HtmlParser;
@@ -31,14 +32,16 @@ public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
+    private final LemmaRepository lemmaRepository;
     private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
 
 
     @Autowired
-    public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository) {
+    public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository) {
         this.sites = sites;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
+        this.lemmaRepository = lemmaRepository;
     }
 
     @Override
@@ -66,7 +69,7 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatusTime(LocalDateTime.now());
                 siteEntity = siteRepository.save(siteEntity);
 
-                RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository, pageRepository, coreCount), siteEntity.getId());
+                RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository, pageRepository, lemmaRepository, coreCount), siteEntity.getId());
                 taskList.put(siteEntity, task);
             });
 

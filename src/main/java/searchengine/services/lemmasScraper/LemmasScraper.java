@@ -31,6 +31,8 @@ public class LemmasScraper {
      * @return ключ является леммой, а значение количеством найденных лемм
      */
     public Map<String, Integer> collectLemmas(String text) {
+        text = getPlainText(text);
+
         String[] words = arrayContainsRussianWords(text);
         HashMap<String, Integer> lemmas = new HashMap<>();
 
@@ -67,6 +69,7 @@ public class LemmasScraper {
      * @return набор уникальных лемм найденных в тексте
      */
     public Set<String> getLemmaSet(String text) {
+        text = getPlainText(text);
         String[] textArray = arrayContainsRussianWords(text);
         Set<String> lemmaSet = new HashSet<>();
         for (String word : textArray) {
@@ -109,5 +112,11 @@ public class LemmasScraper {
             }
         }
         return true;
+    }
+
+    private String getPlainText(String HTMLString) {
+        String result = HTMLString.replaceAll("<[^>]*>", "");
+        result = result.replaceAll("\\s+", " ");
+        return result;
     }
 }

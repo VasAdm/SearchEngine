@@ -16,7 +16,7 @@ import java.util.List;
 @Getter
 @Setter
 @ApiModel(description = "entity representing lemmas")
-@Table(name = "lemmas")
+@Table(name = "lemmas", indexes = {@Index(name = "site_lemma_index", columnList = "site_id, lemma")})
 public class LemmaEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,4 +40,5 @@ public class LemmaEntity implements Serializable {
     @OneToMany(mappedBy = "lemma", cascade = CascadeType.REMOVE)
     @LazyCollection(LazyCollectionOption.EXTRA)
     private List<IndexEntity> indexEntities;
+
 }

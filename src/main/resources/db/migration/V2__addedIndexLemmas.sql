@@ -1,0 +1,1 @@
+create index site_lemma_index on lemmas (site_id, lemma);
