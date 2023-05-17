@@ -7,9 +7,10 @@ import searchengine.model.LemmaEntity;
 
 @Repository
 public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
-//    @Modifying
+    //    @Modifying
     @Query(value = "insert into lemmas (site_id, lemma, frequency) " +
             "  values (:#{#lemma.site.id}, :#{#lemma.lemma}, :#{#lemma.frequency}) " +
             "  on conflict(site_id, lemma) do update set frequency = lemmas.frequency + 1 returning *", nativeQuery = true)
     LemmaEntity saveOrUpdate(LemmaEntity lemma);
-    }
+}
+

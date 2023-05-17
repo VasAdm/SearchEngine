@@ -12,6 +12,7 @@ import searchengine.services.lemmasScraper.LemmasScraper;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
@@ -95,12 +96,21 @@ public class WebParser extends RecursiveAction {
     }
 
     protected void saveLemmas(Set<String> lemmas) {
-        lemmas.forEach(s -> {
-            LemmaEntity lemma = new LemmaEntity();
-            lemma.setLemma(s);
-            lemma.setSite(siteEntity);
-            lemma.setFrequency(1);
-            lemmaRepository.saveOrUpdate(lemma);
-        });
+        lemmas.stream()
+                .map(s -> new LemmaEntity(siteEntity, s, 1))
+                .forEach(lemmaRepository::saveOrUpdate);
+
+//        lemmas.forEach(s -> {
+//            LemmaEntity lemma = new LemmaEntity();
+//            lemma.setLemma(s);
+//            lemma.setSite(siteEntity);
+//            lemma.setFrequency(1);
+//            lemmaRepository.saveOrUpdate(lemma);
+//        });
+    }
+
+//    TODO Rewrite LemmaScraper for to have Set<LemmaEntity, Rank> once for saveLemmas() and saveIndexed() methods
+    protected void saveIndexes(Map<String, Integer> lemmaMap) {
+//        lemmaMap.entrySet().stream().map(e -> new IndexEntity(e.getValue(), pageEntity, e.getKey()))
     }
 }
