@@ -1,6 +1,5 @@
 package searchengine.services.parsing;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
@@ -29,6 +28,7 @@ public class WebParser extends RecursiveAction {
     private final boolean root;
     private String url;
     private HtmlParser htmlParser;
+    private PageEntity pageEntity = null;
 
     public WebParser(SiteEntity siteEntity, String path, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, Set<String> pageSet, boolean root) {
         this.siteEntity = siteEntity;
@@ -40,22 +40,24 @@ public class WebParser extends RecursiveAction {
         this.root = root;
     }
 
-    @SneakyThrows
     @Override
     protected void compute() {
         url = isRoot() ? siteEntity.getUrl() + "/" : path;
         htmlParser = new HtmlParser(url, siteEntity);
         if (isNotFailed() && isNotVisited()) {
-            boolean saved;
+            pageEntity = savePage();
+            boolean saved = pageEntity != null;
+            LemmasScraper lemmasScraper;
             try {
-                saved = savePage() != null;
+                lemmasScraper = LemmasScraper.getInstance();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            Set<String> lemmasSet = lemmasScraper.getLemmaSet(pageEntity.getContent());
+            saveLemmas(lemmasSet);
+
             updateStatusTime();
             if (saved) {
-                updateStatusTime();
-
                 Set<ForkJoinTask<Void>> tasks = htmlParser.getPaths().stream()
                         .map(childPath -> new WebParser(
                                 siteEntity,
@@ -68,14 +70,9 @@ public class WebParser extends RecursiveAction {
                                 .fork())
                         .collect(Collectors.toSet());
                 tasks.forEach(ForkJoinTask::join);
-
-//                if (isRoot() && isNotFailed()) {
-//                    indexed();
-//                }
             }
         }
     }
-
 
     protected boolean isNotFailed() {
         return !siteEntity.getStatus().equals(StatusType.FAILED);
@@ -87,27 +84,23 @@ public class WebParser extends RecursiveAction {
 
     protected void updateStatusTime() {
         siteRepository.updateTime(LocalDateTime.now(), siteEntity.getId());
-//        siteEntity.setStatusTime(LocalDateTime.now());
-//        siteRepository.save(siteEntity);
-    }
-
-    protected PageEntity savePage() throws IOException {
-        PageEntity pageEntity = htmlParser.getPage();
-        LemmasScraper lemmasScraper = LemmasScraper.getInstance();
-        PageEntity page = pageRepository.save(pageEntity);
-        Set<String> stringSet = lemmasScraper.getLemmaSet(pageEntity.getContent());
-        stringSet.forEach(s -> {
-            LemmaEntity lemma = new LemmaEntity();
-            lemma.setSite(siteEntity);
-            lemma.setLemma(s);
-            lemma.setFrequency(1);
-            System.out.println(lemmaRepository.saveOrUpdate(lemma));
-        });
-        return page;
-
     }
 
     protected boolean isRoot() {
         return root;
+    }
+
+    protected PageEntity savePage() {
+        return pageRepository.save(htmlParser.getPage());
+    }
+
+    protected void saveLemmas(Set<String> lemmas) {
+        lemmas.forEach(s -> {
+            LemmaEntity lemma = new LemmaEntity();
+            lemma.setLemma(s);
+            lemma.setSite(siteEntity);
+            lemma.setFrequency(1);
+            lemmaRepository.saveOrUpdate(lemma);
+        });
     }
 }

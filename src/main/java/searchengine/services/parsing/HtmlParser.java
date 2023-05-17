@@ -68,15 +68,9 @@ public class HtmlParser {
             String absPath = el.attr("abs:href");
             String relPath = el.attr("href");
 
-
             boolean isContainRoot = absPath.contains(pageEntity.getSite().getUrl());
-//            boolean isAlreadyAdded = !pageEntity.add(site.getUrl() + relPath);
             boolean isAnchor = relPath.contains("#");
-
-            boolean isFit =
-                    isContainRoot &&
-//                            !isAlreadyAdded &&
-                            !isAnchor;
+            boolean isFit = isContainRoot && !isAnchor;
 
             if (isFit) {
                 result.add(absPath);
