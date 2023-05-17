@@ -1,5 +1,6 @@
 package searchengine.services.parsing;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
@@ -12,9 +13,6 @@ import searchengine.services.lemmasScraper.LemmasScraper;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
@@ -42,6 +40,7 @@ public class WebParser extends RecursiveAction {
         this.root = root;
     }
 
+    @SneakyThrows
     @Override
     protected void compute() {
         url = isRoot() ? siteEntity.getUrl() + "/" : path;
@@ -55,6 +54,8 @@ public class WebParser extends RecursiveAction {
             }
             updateStatusTime();
             if (saved) {
+                updateStatusTime();
+
                 Set<ForkJoinTask<Void>> tasks = htmlParser.getPaths().stream()
                         .map(childPath -> new WebParser(
                                 siteEntity,
@@ -75,6 +76,7 @@ public class WebParser extends RecursiveAction {
         }
     }
 
+
     protected boolean isNotFailed() {
         return !siteEntity.getStatus().equals(StatusType.FAILED);
     }
@@ -84,8 +86,9 @@ public class WebParser extends RecursiveAction {
     }
 
     protected void updateStatusTime() {
-        siteEntity.setStatusTime(LocalDateTime.now());
-        siteRepository.save(siteEntity);
+        siteRepository.updateTime(LocalDateTime.now(), siteEntity.getId());
+//        siteEntity.setStatusTime(LocalDateTime.now());
+//        siteRepository.save(siteEntity);
     }
 
     protected PageEntity savePage() throws IOException {
@@ -98,7 +101,7 @@ public class WebParser extends RecursiveAction {
             lemma.setSite(siteEntity);
             lemma.setLemma(s);
             lemma.setFrequency(1);
-            lemmaRepository.saveOrUpdate(lemma);
+            System.out.println(lemmaRepository.saveOrUpdate(lemma));
         });
         return page;
 
@@ -107,10 +110,4 @@ public class WebParser extends RecursiveAction {
     protected boolean isRoot() {
         return root;
     }
-
-//    protected void indexed() {
-//        siteEntity.setStatusTime(LocalDateTime.now());
-//        siteEntity.setStatus(StatusType.INDEXED);
-//        siteRepository.save(siteEntity);
-//    }
 }
