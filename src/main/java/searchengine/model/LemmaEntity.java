@@ -11,6 +11,7 @@ import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -49,5 +50,18 @@ public class LemmaEntity implements Serializable {
 
     public LemmaEntity() {
         this(null, null, 0);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LemmaEntity lemma1 = (LemmaEntity) o;
+        return Objects.equals(site, lemma1.site) && Objects.equals(lemma, lemma1.lemma);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(site, lemma);
     }
 }

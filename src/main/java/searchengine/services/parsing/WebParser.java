@@ -1,18 +1,14 @@
 package searchengine.services.parsing;
 
 import lombok.extern.slf4j.Slf4j;
-import searchengine.model.LemmaEntity;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
+import searchengine.model.*;
+import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.services.lemmasScraper.LemmasScraper;
+import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
@@ -26,52 +22,38 @@ public class WebParser extends RecursiveAction {
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
+    private final IndexRepository indexRepository;
     private final boolean root;
-    private String url;
-    private HtmlParser htmlParser;
-    private PageEntity pageEntity = null;
 
-    public WebParser(SiteEntity siteEntity, String path, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, Set<String> pageSet, boolean root) {
+    public WebParser(SiteEntity siteEntity, String path, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, Set<String> pageSet, boolean root) {
         this.siteEntity = siteEntity;
         this.path = path;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
+        this.indexRepository = indexRepository;
         this.pageSet = pageSet;
         this.root = root;
     }
 
     @Override
     protected void compute() {
-        url = isRoot() ? siteEntity.getUrl() + "/" : path;
-        htmlParser = new HtmlParser(url, siteEntity);
-        if (isNotFailed() && isNotVisited()) {
-            pageEntity = savePage();
-            boolean saved = pageEntity != null;
-            LemmasScraper lemmasScraper;
-            try {
-                lemmasScraper = LemmasScraper.getInstance();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            Set<String> lemmasSet = lemmasScraper.getLemmaSet(pageEntity.getContent());
-            saveLemmas(lemmasSet);
+        String url = isRoot() ? siteEntity.getUrl() + "/" : path;
+        HtmlParser htmlParser = new HtmlParser(url, siteEntity);
+        if (isNotFailed() && isNotVisited(url)) {
+            PageEntity pageEntity = savePage(htmlParser.getPage());
+            log.info("Парсинг страницы: " + siteEntity.getUrl() + pageEntity.getPath());
+
+            LemmasIndexesCollector collector = new LemmasIndexesCollector(siteEntity, pageEntity, lemmaRepository, indexRepository);
+            collector.collect();
 
             updateStatusTime();
-            if (saved) {
-                Set<ForkJoinTask<Void>> tasks = htmlParser.getPaths().stream()
-                        .map(childPath -> new WebParser(
-                                siteEntity,
-                                childPath,
-                                siteRepository,
-                                pageRepository,
-                                lemmaRepository,
-                                pageSet,
-                                false)
-                                .fork())
-                        .collect(Collectors.toSet());
-                tasks.forEach(ForkJoinTask::join);
-            }
+
+            Set<ForkJoinTask<Void>> tasks = htmlParser.getPaths().stream()
+                    .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,
+                            lemmaRepository, indexRepository, pageSet, false).fork())
+                    .collect(Collectors.toSet());
+            tasks.forEach(ForkJoinTask::join);
         }
     }
 
@@ -79,7 +61,7 @@ public class WebParser extends RecursiveAction {
         return !siteEntity.getStatus().equals(StatusType.FAILED);
     }
 
-    protected boolean isNotVisited() {
+    protected boolean isNotVisited(String url) {
         return pageSet.add(url);
     }
 
@@ -91,26 +73,7 @@ public class WebParser extends RecursiveAction {
         return root;
     }
 
-    protected PageEntity savePage() {
-        return pageRepository.save(htmlParser.getPage());
-    }
-
-    protected void saveLemmas(Set<String> lemmas) {
-        lemmas.stream()
-                .map(s -> new LemmaEntity(siteEntity, s, 1))
-                .forEach(lemmaRepository::saveOrUpdate);
-
-//        lemmas.forEach(s -> {
-//            LemmaEntity lemma = new LemmaEntity();
-//            lemma.setLemma(s);
-//            lemma.setSite(siteEntity);
-//            lemma.setFrequency(1);
-//            lemmaRepository.saveOrUpdate(lemma);
-//        });
-    }
-
-//    TODO Rewrite LemmaScraper for to have Set<LemmaEntity, Rank> once for saveLemmas() and saveIndexed() methods
-    protected void saveIndexes(Map<String, Integer> lemmaMap) {
-//        lemmaMap.entrySet().stream().map(e -> new IndexEntity(e.getValue(), pageEntity, e.getKey()))
+    protected PageEntity savePage(PageEntity page) {
+        return pageRepository.save(page);
     }
 }

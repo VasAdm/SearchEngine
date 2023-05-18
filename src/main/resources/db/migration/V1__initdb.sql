@@ -93,3 +93,9 @@ alter table if exists pages
     add constraint pages_site_fk
         foreign key (site_id)
             references sites;
+
+create unique index site_path
+    on pages (site_id, path);
+
+create unique index site_lemma_index
+    on lemmas (site_id, lemma);
