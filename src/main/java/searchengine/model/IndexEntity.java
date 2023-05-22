@@ -5,9 +5,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
 
@@ -15,6 +14,7 @@ import java.io.Serializable;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 @ApiModel(description = "entity representing search indexes")
 @Table(name = "Indexes")
 public class IndexEntity implements Serializable {
@@ -22,10 +22,6 @@ public class IndexEntity implements Serializable {
         this.rank = rank;
         this.page = page;
         this.lemma = lemma;
-    }
-
-    public IndexEntity() {
-        this(0f, null, null);
     }
 
     @Id
@@ -39,13 +35,11 @@ public class IndexEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "page_id", referencedColumnName = "id", nullable = false)
-    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private PageEntity page;
 
     @ManyToOne
     @JoinColumn(name = "lemma_id", referencedColumnName = "id", nullable = false)
-    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private LemmaEntity lemma;
 }

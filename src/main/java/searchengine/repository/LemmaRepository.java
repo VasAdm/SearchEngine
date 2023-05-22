@@ -18,7 +18,8 @@ public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
     //    @Modifying
     @Query(value = "insert into lemmas (site_id, lemma, frequency) " +
             "  values (:#{#lemma.site.id}, :#{#lemma.lemma}, :#{#lemma.frequency}) " +
-            "  on conflict(site_id, lemma) do update set frequency = lemmas.frequency + 1 returning *", nativeQuery = true)
+            "  on conflict(site_id, lemma) do update set frequency = case " +
+            "when lemmas.frequency = 1 then 1 else lemmas.frequency - 1 end returning *", nativeQuery = true)
     LemmaEntity saveOrUpdate(LemmaEntity lemma);
 }
 

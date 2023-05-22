@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface IndexRepository extends CrudRepository<IndexEntity, Integer> {
-    List<IndexEntity> deleteByPage(PageEntity page);
+    List<IndexEntity> getByPage(PageEntity page);
 
 }

@@ -5,17 +5,19 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 @ApiModel(description = "entity representing lemmas")
 @Table(name = "lemmas", indexes = {@Index(name = "site_lemma_index", columnList = "site_id, lemma")})
 public class LemmaEntity implements Serializable {
@@ -32,7 +34,6 @@ public class LemmaEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "site_id", referencedColumnName = "id", nullable = false)
-    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private SiteEntity site;
 
@@ -44,13 +45,9 @@ public class LemmaEntity implements Serializable {
     @ApiModelProperty("the number of pages where the word occurs at least once")
     private int frequency;
 
-    @OneToMany(mappedBy = "lemma", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "lemma", orphanRemoval = true)
     @LazyCollection(LazyCollectionOption.EXTRA)
-    private List<IndexEntity> indexEntities;
-
-    public LemmaEntity() {
-        this(null, null, 0);
-    }
+    private Set<IndexEntity> indexEntities;
 
     @Override
     public boolean equals(Object o) {

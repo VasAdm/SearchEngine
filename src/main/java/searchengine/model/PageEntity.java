@@ -10,7 +10,7 @@ import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Set;
 
 
 @Entity
@@ -26,7 +26,6 @@ public class PageEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "site_id", nullable = false, referencedColumnName = "id")
-    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private SiteEntity site;
 
@@ -42,8 +41,8 @@ public class PageEntity implements Serializable {
     @ApiModelProperty("content of webpage")
     private String content;
 
-    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @LazyCollection(LazyCollectionOption.EXTRA)
-    private List<IndexEntity> indexEntities;
+    private Set<IndexEntity> indexEntities;
 
 }

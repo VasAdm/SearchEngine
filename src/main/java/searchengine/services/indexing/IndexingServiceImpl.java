@@ -37,7 +37,6 @@ public class IndexingServiceImpl implements IndexingService {
     private final IndexRepository indexRepository;
     private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
 
-
     @Autowired
     public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository,
                                LemmaRepository lemmaRepository, IndexRepository indexRepository) {
@@ -114,17 +113,19 @@ public class IndexingServiceImpl implements IndexingService {
         optionalPageEntity.ifPresent(pageEntity -> finalPage.setId(pageEntity.getId()));
 
         if (finalPage.getId() != 0) {
-            List<IndexEntity> indexList = indexRepository.deleteByPage(finalPage);
+
+            List<IndexEntity> indexList = indexRepository.getByPage(finalPage);
             List<String> lemmaList = indexList.stream()
                     .map(IndexEntity::getLemma)
                     .map(LemmaEntity::getLemma)
                     .toList();
-            lemmaRepository.updateFrequencyByLemmaIn(lemmaList);
+            indexRepository.deleteAll(indexList);
         }
-
         page = pageRepository.save(finalPage);
         LemmasIndexesCollector collector = new LemmasIndexesCollector(siteEntity, finalPage, lemmaRepository, indexRepository);
         collector.collect();
+        siteEntity.setStatus(StatusType.INDEXED);
+        siteRepository.save(siteEntity);
 
         log.info("Parsing page - " + page.getSite().getUrl() + page.getPath() + ": completed");
         return ResponseEntity.ok(new IndexingStatusResponse(true));

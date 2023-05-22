@@ -12,8 +12,7 @@ import org.hibernate.annotations.Type;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -51,9 +50,9 @@ public class SiteEntity implements Serializable {
 
     @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
     @LazyCollection(LazyCollectionOption.EXTRA)
-    private List<PageEntity> pageEntities = new ArrayList<>();
+    private Set<PageEntity> pageEntities;
 
     @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
     @LazyCollection(LazyCollectionOption.EXTRA)
-    private List<LemmaEntity> lemmaEntities;
+    private Set<LemmaEntity> lemmaEntities;
 }
