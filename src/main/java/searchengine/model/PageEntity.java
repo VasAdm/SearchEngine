@@ -41,8 +41,8 @@ public class PageEntity implements Serializable {
     @ApiModelProperty("content of webpage")
     private String content;
 
-    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    @LazyCollection(LazyCollectionOption.EXTRA)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "page")
+//    @LazyCollection(LazyCollectionOption.EXTRA)
     private Set<IndexEntity> indexEntities;
 
 }

@@ -62,6 +62,7 @@ public class IndexingServiceImpl implements IndexingService {
             return ResponseEntity.badRequest()
                     .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
+
             siteRepository.deleteAll(siteEntities);
 
             sites.getSites().forEach(site -> {
@@ -98,7 +99,6 @@ public class IndexingServiceImpl implements IndexingService {
     public ResponseEntity<IndexingStatusResponse> indexPage(String url) {
         String siteUrl = getSiteUrl(url);
 
-
         if (siteUrl.isEmpty()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Переданная строка не является ссылкой"));
         }
@@ -119,6 +119,7 @@ public class IndexingServiceImpl implements IndexingService {
                     .map(IndexEntity::getLemma)
                     .map(LemmaEntity::getLemma)
                     .toList();
+            lemmaRepository.updateFrequencyByLemmaIn(lemmaList);
             indexRepository.deleteAll(indexList);
         }
         page = pageRepository.save(finalPage);
@@ -163,4 +164,5 @@ public class IndexingServiceImpl implements IndexingService {
         }
         return result;
     }
+
 }

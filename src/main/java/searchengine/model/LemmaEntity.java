@@ -45,8 +45,9 @@ public class LemmaEntity implements Serializable {
     @ApiModelProperty("the number of pages where the word occurs at least once")
     private int frequency;
 
-    @OneToMany(mappedBy = "lemma", orphanRemoval = true)
-    @LazyCollection(LazyCollectionOption.EXTRA)
+//    @OneToMany(mappedBy = "lemma", orphanRemoval = true)
+//    @LazyCollection(LazyCollectionOption.EXTRA)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "lemma")
     private Set<IndexEntity> indexEntities;
 
     @Override
