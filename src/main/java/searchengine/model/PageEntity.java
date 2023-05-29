@@ -26,7 +26,7 @@ public class PageEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "site_id", nullable = false, referencedColumnName = "id")
-    @LazyCollection(LazyCollectionOption.EXTRA)
+//    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private SiteEntity site;
 
