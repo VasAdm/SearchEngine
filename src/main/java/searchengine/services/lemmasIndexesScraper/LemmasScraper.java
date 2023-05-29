@@ -1,4 +1,4 @@
-package searchengine.services.lemmasScraper;
+package searchengine.services.lemmasIndexesScraper;
 
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;

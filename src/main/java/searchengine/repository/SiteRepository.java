@@ -17,4 +17,6 @@ public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
     @Modifying
     @Query("update SiteEntity s set s.statusTime = ?1 where s.id = ?2")
     void updateTime(LocalDateTime statusTime, int id);
+
+
 }

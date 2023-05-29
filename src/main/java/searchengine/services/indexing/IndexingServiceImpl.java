@@ -4,15 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingStatusResponse;
 import searchengine.dto.indexing.IndexingStatusResponseError;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
+import searchengine.model.*;
+import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
+import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 import searchengine.services.parsing.HtmlParser;
 import searchengine.services.parsing.TaskRunner;
 
@@ -33,15 +34,17 @@ public class IndexingServiceImpl implements IndexingService {
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
+    private final IndexRepository indexRepository;
     private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
 
-
     @Autowired
-    public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository) {
+    public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository,
+                               LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.sites = sites;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
+        this.indexRepository = indexRepository;
     }
 
     @Override
@@ -56,20 +59,16 @@ public class IndexingServiceImpl implements IndexingService {
         });
 
         if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
-            return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
+            return ResponseEntity.badRequest()
+                    .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
 
             siteRepository.deleteAll(siteEntities);
 
             sites.getSites().forEach(site -> {
-                SiteEntity siteEntity = new SiteEntity();
-                siteEntity.setName(site.getName());
-                siteEntity.setUrl(site.getUrl());
-                siteEntity.setStatus(StatusType.INDEXING);
-                siteEntity.setStatusTime(LocalDateTime.now());
-                siteEntity = siteRepository.save(siteEntity);
-
-                RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository, pageRepository, lemmaRepository, coreCount), siteEntity.getId());
+                SiteEntity siteEntity = createSite(site);
+                RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository,
+                        pageRepository, lemmaRepository, indexRepository, coreCount), siteEntity.getId());
                 taskList.put(siteEntity, task);
             });
 
@@ -98,28 +97,72 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> indexPage(String url) {
-        String regex = "^https?://[a-zA-Zа-яА-Я._-]*.\\w{2,3}";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(url);
-        String subString = "";
-        while (matcher.find()) {
-            subString = url.substring(matcher.start(), matcher.end());
-        }
+        String siteUrl = getSiteUrl(url);
 
-        if (subString.isEmpty()) {
+        if (siteUrl.isEmpty()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Переданная строка не является ссылкой"));
         }
-        SiteEntity site = siteRepository.getByUrl(subString);
-        if (site == null) {
+        SiteEntity siteEntity = getSite(siteUrl);
+
+        if (siteEntity == null) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле"));
         }
-        Optional<PageEntity> optionalPageEntity = pageRepository.findAllByPathAndSite_Id(url.substring(subString.length()), site.getId());
-        PageEntity page = new HtmlParser(url, site).getPage();
-        optionalPageEntity.ifPresent(pageEntity -> page.setId(pageEntity.getId()));
+        Optional<PageEntity> optionalPageEntity = pageRepository.findAllByPathAndSite_Id(url.substring(siteUrl.length()), siteEntity.getId());
+        PageEntity page = new HtmlParser(url, siteEntity).getPage();
+        PageEntity finalPage = page;
+        optionalPageEntity.ifPresent(pageEntity -> finalPage.setId(pageEntity.getId()));
 
-        pageRepository.save(page);
+        if (finalPage.getId() != 0) {
+
+            List<IndexEntity> indexList = indexRepository.getByPage(finalPage);
+            List<String> lemmaList = indexList.stream()
+                    .map(IndexEntity::getLemma)
+                    .map(LemmaEntity::getLemma)
+                    .toList();
+            lemmaRepository.updateFrequencyByLemmaIn(lemmaList);
+            indexRepository.deleteAll(indexList);
+        }
+        page = pageRepository.save(finalPage);
+        LemmasIndexesCollector collector = new LemmasIndexesCollector(siteEntity, finalPage, lemmaRepository, indexRepository);
+        collector.collect();
+        siteEntity.setStatus(StatusType.INDEXED);
+        siteRepository.save(siteEntity);
 
         log.info("Parsing page - " + page.getSite().getUrl() + page.getPath() + ": completed");
         return ResponseEntity.ok(new IndexingStatusResponse(true));
     }
+
+    private SiteEntity getSite(String url) {
+        SiteEntity resultSite = siteRepository.getByUrl(url);
+        if (resultSite == null) {
+            for (Site s : sites.getSites()) {
+                if (s.getUrl().equals(url)) {
+                    resultSite = createSite(s);
+                }
+            }
+        }
+        return resultSite;
+    }
+
+    private SiteEntity createSite(Site site) {
+        SiteEntity siteEntity = new SiteEntity();
+        siteEntity.setName(site.getName());
+        siteEntity.setUrl(site.getUrl());
+        siteEntity.setStatus(StatusType.INDEXING);
+        siteEntity.setStatusTime(LocalDateTime.now());
+        siteEntity = siteRepository.save(siteEntity);
+        return siteEntity;
+    }
+
+    private String getSiteUrl(String url) {
+        String regex = "^https?://[a-zA-Zа-яА-Я._-]*\\.\\w{2,3}";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(url);
+        String result = "";
+        while (matcher.find()) {
+            result = url.substring(matcher.start(), matcher.end());
+        }
+        return result;
+    }
+
 }

@@ -6,14 +6,11 @@ import io.swagger.annotations.ApiModelProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 import org.hibernate.annotations.Type;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -49,11 +46,13 @@ public class SiteEntity implements Serializable {
     @ApiModelProperty("name of website")
     private String name;
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
-    @LazyCollection(LazyCollectionOption.EXTRA)
-    private List<PageEntity> pageEntities = new ArrayList<>();
+    //    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
+//    @LazyCollection(LazyCollectionOption.EXTRA)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "site")
+    private Set<PageEntity> pageEntities;
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
-    @LazyCollection(LazyCollectionOption.EXTRA)
-    private List<LemmaEntity> lemmaEntities;
+    //    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
+//    @LazyCollection(LazyCollectionOption.EXTRA)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "site")
+    private Set<LemmaEntity> lemmaEntities;
 }
