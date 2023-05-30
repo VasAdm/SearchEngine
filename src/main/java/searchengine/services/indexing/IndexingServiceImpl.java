@@ -18,6 +18,7 @@ import searchengine.services.parsing.HtmlParser;
 import searchengine.services.parsing.TaskRunner;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,8 +63,9 @@ public class IndexingServiceImpl implements IndexingService {
             return ResponseEntity.badRequest()
                     .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
-
+            LocalDateTime start = LocalDateTime.now();
             siteRepository.deleteAll(siteEntities);
+            System.out.println(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - start.toEpochSecond(ZoneOffset.UTC));
 
             sites.getSites().forEach(site -> {
                 SiteEntity siteEntity = createSite(site);
@@ -164,5 +166,4 @@ public class IndexingServiceImpl implements IndexingService {
         }
         return result;
     }
-
 }
