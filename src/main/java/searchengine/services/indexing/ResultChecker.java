@@ -44,7 +44,7 @@ public class ResultChecker implements Runnable {
 //                }
 
         while (!runnableFutureList.isEmpty()) {
-            for (Iterator<Map.Entry<SiteEntity, RunnableFuture<Integer>>> futureIterator = runnableFutureList.entrySet().iterator(); futureIterator.hasNext();) {
+            for (Iterator<Map.Entry<SiteEntity, RunnableFuture<Integer>>> futureIterator = runnableFutureList.entrySet().iterator(); futureIterator.hasNext(); ) {
                 Map.Entry<SiteEntity, RunnableFuture<Integer>> entry = futureIterator.next();
                 if (entry.getValue().isCancelled()) {
                     entry.getKey().setStatus(StatusType.FAILED);
@@ -60,13 +60,6 @@ public class ResultChecker implements Runnable {
                     futureIterator.remove();
                     runnableFutureList.remove(entry.getKey());
                 }
-
-
-//                RunnableFuture<Integer> future = futureIterator.next();
-//                if (future.isDone() || future.isCancelled()) {
-//                    futureIterator.remove();
-//                    runnableFutureList.remove(future);
-//                }
             }
         }
     }

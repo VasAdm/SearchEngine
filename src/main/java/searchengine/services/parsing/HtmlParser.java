@@ -9,14 +9,16 @@ import org.jsoup.select.Elements;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 @Slf4j
 public class HtmlParser {
     private final String url;
     private final SiteEntity site;
     private Document document;
-    private final PageEntity pageEntity = new PageEntity();
 
     public HtmlParser(String url, SiteEntity site) {
         this.url = url;
@@ -24,7 +26,6 @@ public class HtmlParser {
     }
 
     public PageEntity getPage() {
-
         long delay = (long) (Math.random() * ((2000 - 500) + 1)) + 500;
         try {
             Thread.sleep(delay);
@@ -41,26 +42,30 @@ public class HtmlParser {
             String contentType = response.contentType();
 
             assert contentType != null;
-            if (contentType.contains("text/")) {
-                int statusCode = response.statusCode();
-
-                document = response.parse();
-
-                pageEntity.setContent(document.toString());
-                String path = url.substring(site.getUrl().length());
-                pageEntity.setPath(Objects.equals(path, "") ? "/" : path);
-                pageEntity.setCode(statusCode);
-                pageEntity.setSite(site);
+            if (!contentType.contains("text/")) {
+                return null;
             }
+            PageEntity pageEntity = new PageEntity();
+            int statusCode = response.statusCode();
+            document = response.parse();
 
-        } catch (Exception ex) {
-            log.warn(ex.getLocalizedMessage());
+            pageEntity.setContent(document.toString());
+            String path = url.substring(site.getUrl().length());
+            pageEntity.setPath(Objects.equals(path, "") ? "/" : path);
+            pageEntity.setCode(statusCode);
+            pageEntity.setSite(site);
+
+            return pageEntity;
+        } catch (InterruptedException | IOException ex) {
+            Thread.currentThread().interrupt();
         }
-
-        return pageEntity;
+        return null;
     }
 
     public Set<String> getPaths() {
+        if (document == null) {
+            return null;
+        }
         Set<String> result = new HashSet<>();
         Elements elements = document.select("a[href^=/]");
 
@@ -68,7 +73,7 @@ public class HtmlParser {
             String absPath = el.attr("abs:href");
             String relPath = el.attr("href");
 
-            boolean isContainRoot = absPath.contains(pageEntity.getSite().getUrl());
+            boolean isContainRoot = absPath.contains(site.getUrl());
             boolean isAnchor = relPath.contains("#");
             boolean isFit = isContainRoot && !isAnchor;
 

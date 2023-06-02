@@ -6,6 +6,8 @@ import io.swagger.annotations.ApiModelProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.hibernate.annotations.Type;
 
 import java.io.Serializable;
@@ -46,13 +48,11 @@ public class SiteEntity implements Serializable {
     @ApiModelProperty("name of website")
     private String name;
 
-    //    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
-//    @LazyCollection(LazyCollectionOption.EXTRA)
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "site")
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.EXTRA)
     private Set<PageEntity> pageEntities;
 
-    //    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
-//    @LazyCollection(LazyCollectionOption.EXTRA)
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "site")
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @LazyCollection(LazyCollectionOption.EXTRA)
     private Set<LemmaEntity> lemmaEntities;
 }

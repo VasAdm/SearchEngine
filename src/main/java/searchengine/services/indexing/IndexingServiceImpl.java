@@ -64,7 +64,8 @@ public class IndexingServiceImpl implements IndexingService {
                     .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
             LocalDateTime start = LocalDateTime.now();
-            siteRepository.deleteAll(siteEntities);
+//            siteRepository.deleteAll(siteEntities);
+            clearTables();
             System.out.println(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - start.toEpochSecond(ZoneOffset.UTC));
 
             sites.getSites().forEach(site -> {
@@ -101,7 +102,7 @@ public class IndexingServiceImpl implements IndexingService {
     public ResponseEntity<IndexingStatusResponse> indexPage(String url) {
         String siteUrl = getSiteUrl(url);
 
-        if (siteUrl.isEmpty()) {
+        if (siteUrl == null) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Переданная строка не является ссылкой"));
         }
         SiteEntity siteEntity = getSite(siteUrl);
@@ -160,10 +161,17 @@ public class IndexingServiceImpl implements IndexingService {
         String regex = "^https?://[a-zA-Zа-яА-Я._-]*\\.\\w{2,3}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(url);
-        String result = "";
+        String result = null;
         while (matcher.find()) {
             result = url.substring(matcher.start(), matcher.end());
         }
         return result;
+    }
+
+    private void clearTables() {
+        indexRepository.deleteAll();
+        lemmaRepository.deleteAll();
+        pageRepository.deleteAll();
+        siteRepository.deleteAll();
     }
 }

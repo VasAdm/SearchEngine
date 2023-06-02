@@ -26,7 +26,6 @@ public class PageEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "site_id", nullable = false, referencedColumnName = "id")
-//    @LazyCollection(LazyCollectionOption.EXTRA)
     @JsonIgnore
     private SiteEntity site;
 
@@ -42,7 +41,7 @@ public class PageEntity implements Serializable {
     @ApiModelProperty("content of webpage")
     private String content;
 
-    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
     @LazyCollection(LazyCollectionOption.EXTRA)
     private List<IndexEntity> indexEntities;
 

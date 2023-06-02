@@ -35,9 +35,11 @@ public class TaskRunner implements Runnable {
         try (ForkJoinPool task = new ForkJoinPool(coreCount)) {
             WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
             log.info("Запущен парсинг сайта: " + siteEntity.getName());
-            task.execute(webParser);
+            task.invoke(webParser);
         } catch (Exception ex) {
             log.error(ex.getLocalizedMessage());
+            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
     }
 }
