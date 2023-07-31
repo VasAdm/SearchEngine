@@ -29,7 +29,6 @@ public class HtmlParser {
         long delay = (long) (Math.random() * ((2000 - 500) + 1)) + 500;
         try {
             Thread.sleep(delay);
-
             Connection.Response response = Jsoup.connect(url)
                     .maxBodySize(0)
                     .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:101.0) Gecko/20100101 Firefox/101.0")
@@ -39,6 +38,7 @@ public class HtmlParser {
                     .ignoreHttpErrors(true)
                     .followRedirects(true)
                     .execute();
+
             String contentType = response.contentType();
 
             assert contentType != null;
@@ -56,9 +56,12 @@ public class HtmlParser {
             pageEntity.setSite(site);
 
             return pageEntity;
-        } catch (InterruptedException | IOException ex) {
+        } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();
+        } catch (IOException ioException) {
+            log.error(ioException.getMessage());
         }
+
         return null;
     }
 

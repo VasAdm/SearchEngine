@@ -13,9 +13,7 @@ import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,17 +26,6 @@ public class WebParser extends RecursiveAction {
     private final IndexRepository indexRepository;
     private final Set<String> pageSet;
     private final boolean root;
-
-//    public WebParser(SiteEntity siteEntity, String path, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, Set<String> pageSet, boolean root) {
-//        this.siteEntity = siteEntity;
-//        this.path = path;
-//        this.siteRepository = siteRepository;
-//        this.pageRepository = pageRepository;
-//        this.lemmaRepository = lemmaRepository;
-//        this.indexRepository = indexRepository;
-//        this.pageSet = pageSet;
-//        this.root = root;
-//    }
 
     @Override
     protected void compute() {
@@ -57,11 +44,12 @@ public class WebParser extends RecursiveAction {
                 updateStatusTime();
             }
 
-            Set<ForkJoinTask<Void>> tasks = htmlParser.getPaths().stream()
+//            Set<ForkJoinTask<Void>> tasks =
+            htmlParser.getPaths().stream()
                     .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,
-                            lemmaRepository, indexRepository, pageSet, false).fork())
-                    .collect(Collectors.toSet());
-            tasks.forEach(ForkJoinTask::join);
+                            lemmaRepository, indexRepository, pageSet, false).fork());
+//                    .collect(Collectors.toSet());
+//            tasks.forEach(ForkJoinTask::join);
         }
     }
 
