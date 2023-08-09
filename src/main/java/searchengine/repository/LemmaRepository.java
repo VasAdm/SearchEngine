@@ -1,5 +1,6 @@
 package searchengine.repository;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -10,7 +11,7 @@ import searchengine.model.LemmaEntity;
 import java.util.Collection;
 
 @Repository
-public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
+public interface LemmaRepository extends JpaRepository<LemmaEntity, Integer> {
     @Transactional
     @Modifying
     @Query("update LemmaEntity l set l.frequency = l.frequency-1 where l.lemma in ?1")

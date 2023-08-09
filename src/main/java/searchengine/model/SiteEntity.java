@@ -49,10 +49,10 @@ public class SiteEntity implements Serializable {
     private String name;
 
     @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.EXTRA)
+//    @LazyCollection(LazyCollectionOption.EXTRA)
     private Set<PageEntity> pageEntities;
 
     @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.EXTRA)
+//    @LazyCollection(LazyCollectionOption.EXTRA)
     private Set<LemmaEntity> lemmaEntities;
 }

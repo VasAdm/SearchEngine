@@ -54,6 +54,7 @@ public class ResultChecker implements Runnable {
                     futureIterator.remove();
                     runnableFutureList.remove(entry.getKey());
                 } else if (entry.getValue().isDone()) {
+                    log.info("Парсинг сайта: " + entry.getKey().getName() + " завершён.");
                     entry.getKey().setStatus(StatusType.INDEXED);
                     entry.getKey().setStatusTime(LocalDateTime.now());
                     siteRepository.save(entry.getKey());

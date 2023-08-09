@@ -20,22 +20,24 @@ public class TaskRunner implements Runnable {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private final int coreCount;
-    public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, int coreCount) {
+
+    public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
-        this.coreCount = coreCount;
         this.lemmaRepository = lemmaRepository;
         this.indexRepository = indexRepository;
     }
 
     @Override
     public void run() {
-        try (ForkJoinPool task = new ForkJoinPool(coreCount)) {
-            WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
-            log.info("Запущен парсинг сайта: " + siteEntity.getName());
-            task.invoke(webParser);
-        }
+        ForkJoinPool.commonPool().execute(new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true));
+        log.info("Запущен парсинг сайта: " + siteEntity.getName());
+//        try (ForkJoinPool task = new ForkJoinPool()) {
+//            WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
+//            log.info("Запущен парсинг сайта: " + siteEntity.getName());
+//            task.invoke(webParser);
+//        }
+//    }
     }
 }

@@ -14,7 +14,8 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ApiModel(description = "entity representing search indexes")
-@Table(name = "Indexes")
+@Table(name = "Indexes", indexes = {@Index(name = "page_id", columnList = "page_id"),
+        @Index(name = "lemma_id", columnList = "lemma_id")})
 public class IndexEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

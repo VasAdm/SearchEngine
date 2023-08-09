@@ -13,6 +13,7 @@ import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
 @Slf4j
@@ -44,12 +45,9 @@ public class WebParser extends RecursiveAction {
                 updateStatusTime();
             }
 
-//            Set<ForkJoinTask<Void>> tasks =
             htmlParser.getPaths().stream()
                     .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,
-                            lemmaRepository, indexRepository, pageSet, false).fork());
-//                    .collect(Collectors.toSet());
-//            tasks.forEach(ForkJoinTask::join);
+                            lemmaRepository, indexRepository, pageSet, false)).forEach(WebParser::fork);
         }
     }
 
