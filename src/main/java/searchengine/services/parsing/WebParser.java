@@ -13,7 +13,6 @@ import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
 @Slf4j

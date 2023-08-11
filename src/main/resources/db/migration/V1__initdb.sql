@@ -68,8 +68,7 @@ create table sites
     name        VARCHAR(255) NOT NULL,
     primary key (id)
 );
-create index path on pages (path);
-
+-- create index path on pages (path);
 
 alter table if exists indexes
     add constraint indexes_lemma_fk
@@ -80,19 +79,22 @@ alter table if exists indexes
 alter table if exists indexes
     add constraint indexes_page_fk
         foreign key (page_id)
-            references pages;
+            references pages
+            on update cascade on delete cascade;
 
 
 alter table if exists lemmas
     add constraint lemmas_site_fk
         foreign key (site_id)
-            references sites;
+            references sites
+            on update cascade on delete cascade;
 
 
 alter table if exists pages
     add constraint pages_site_fk
         foreign key (site_id)
-            references sites;
+            references sites
+            on update cascade on delete cascade;
 
 create unique index site_path
     on pages (site_id, path);

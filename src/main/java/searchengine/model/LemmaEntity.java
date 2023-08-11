@@ -6,8 +6,6 @@ import io.swagger.annotations.ApiModelProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import java.io.Serializable;
 import java.util.List;
@@ -16,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @ApiModel(description = "entity representing lemmas")
-@Table(name = "lemmas", indexes = {@Index(name = "site_lemma_index", columnList = "site_id, lemma"),
+@Table(name = "lemmas", indexes = {@Index(name = "site_lemma_index", columnList = "site_id, lemma", unique = true),
         @Index(name = "site_id", columnList = "site_id")})
 public class LemmaEntity implements Serializable {
     @Id

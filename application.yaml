@@ -33,7 +33,7 @@ spring:
           batch_size: 100
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
     generate-ddl: false
   #    defer-datasource-initialization: true
   mvc:
@@ -42,14 +42,14 @@ spring:
 
 indexing-settings:
   sites:
-    #    - url: https://lenta.ru
-    #      name: Лента.ру
+#    - url: https://lenta.ru
+#      name: Лента.ру
     - url: https://skillbox.ru
       name: Skillbox
 #    - url: https://www.playback.ru
 #      name: PlayBack.Ru
-    #    - url: http://radiomv.ru
-    #      name: MiliceyskayaVolna
+#    - url: http://radiomv.ru
+#      name: MiliceyskayaVolna
 #    - url: https://histrf.ru/
 #      name: История.рф
 #    - url: http://ostranah.ru/

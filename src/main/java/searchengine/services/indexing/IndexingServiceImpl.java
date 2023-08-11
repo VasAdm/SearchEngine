@@ -15,15 +15,11 @@ import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 import searchengine.services.parsing.HtmlParser;
-import searchengine.services.parsing.TaskRunner;
+import searchengine.services.parsing.WebParser;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,8 +32,11 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
+//    private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
     private Thread secondaryThread = null;
+    private final Set<String> pageSet = Collections.synchronizedSet(new HashSet<>());
+
+    private final ForkJoinPool task = new ForkJoinPool();
 
     @Autowired
     public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository,
@@ -52,8 +51,6 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
         Set<SiteEntity> siteEntities = new HashSet<>();
-        int coreCount = (Runtime.getRuntime().availableProcessors() - 1) / sites.getSites().size();
-        ExecutorService executorService = Executors.newWorkStealingPool(coreCount);
 
         sites.getSites().forEach(s -> {
             SiteEntity site = siteRepository.getByUrl(s.getUrl());
@@ -65,25 +62,22 @@ public class IndexingServiceImpl implements IndexingService {
                     .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
             secondaryThread = new Thread(() -> {
-                LocalDateTime start = LocalDateTime.now();
-//                clearTables();
                 siteRepository.deleteAll(siteEntities);
-                System.out.println(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - start.toEpochSecond(ZoneOffset.UTC));
 
                 sites.getSites().forEach(site -> {
                     SiteEntity siteEntity = createSite(site);
-                    RunnableFuture<Integer> task = new FutureTask<>(new TaskRunner(siteEntity, siteRepository,
-                            pageRepository, lemmaRepository, indexRepository), siteEntity.getId());
-                    taskList.put(siteEntity, task);
+                    WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
+                    log.info("Запущен парсинг сайта: " + siteEntity.getName());
+                    task.invoke(webParser);
                 });
-
-                taskList.values().forEach(executorService::execute);
-
-                ResultChecker resultChecker = new ResultChecker(taskList, siteRepository);
-
-                executorService.execute(resultChecker);
-
-                executorService.shutdown();
+                while (!task.isTerminated() || !task.isShutdown()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                siteRepository.findAll().forEach(siteEntity -> {siteEntity.setStatus(StatusType.INDEXED); siteRepository.save(siteEntity);});
             });
             secondaryThread.start();
 
@@ -93,11 +87,12 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        if (taskList.isEmpty()) {
+        if (task.isShutdown()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
-            taskList.values().forEach(task -> task.cancel(true));
-
+//            taskList.values().forEach(task -> task.cancel(true));
+            task.shutdownNow();
+            siteRepository.findAll().forEach(siteEntity -> {siteEntity.setStatus(StatusType.FAILED); siteRepository.save(siteEntity);});
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }
@@ -172,10 +167,10 @@ public class IndexingServiceImpl implements IndexingService {
         return result;
     }
 
-    private void clearTables() {
-        indexRepository.deleteAllInBatch();
-        lemmaRepository.deleteAllInBatch();
-        pageRepository.deleteAllInBatch();
-        siteRepository.deleteAllInBatch();
-    }
+//    private void clearTables() {
+//        indexRepository.deleteAllInBatch();
+//        lemmaRepository.deleteAllInBatch();
+//        pageRepository.deleteAllInBatch();
+//        siteRepository.deleteAllInBatch();
+//    }
 }
