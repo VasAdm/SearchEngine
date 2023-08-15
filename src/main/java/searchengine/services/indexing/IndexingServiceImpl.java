@@ -1,5 +1,6 @@
 package searchengine.services.indexing;
 
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Thread.sleep;
+
 @Service
 @Slf4j
 public class IndexingServiceImpl implements IndexingService {
@@ -32,10 +35,6 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-//    private final Map<SiteEntity, RunnableFuture<Integer>> taskList = Collections.synchronizedMap(new HashMap<>());
-    private Thread secondaryThread = null;
-    private final Set<String> pageSet = Collections.synchronizedSet(new HashSet<>());
-
     private final ForkJoinPool task = new ForkJoinPool();
 
     @Autowired
@@ -57,27 +56,31 @@ public class IndexingServiceImpl implements IndexingService {
             if (site != null) siteEntities.add(site);
         });
 
-        if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING)) || secondaryThread != null) {
+        if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
             return ResponseEntity.badRequest()
                     .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
-            secondaryThread = new Thread(() -> {
-                siteRepository.deleteAll(siteEntities);
+            Thread secondaryThread = new Thread(() -> {
+                siteRepository.deleteAllInBatch(siteEntities);
 
                 sites.getSites().forEach(site -> {
                     SiteEntity siteEntity = createSite(site);
-                    WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
+                    WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, true);
                     log.info("Запущен парсинг сайта: " + siteEntity.getName());
-                    task.invoke(webParser);
+                    task.execute(webParser);
                 });
                 while (!task.isTerminated() || !task.isShutdown()) {
                     try {
-                        Thread.sleep(1000);
+                        sleep(1000);
                     } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        Thread.currentThread().interrupt();
+                        System.out.println(Thread.currentThread().getName() + " interrupted");
                     }
                 }
-                siteRepository.findAll().forEach(siteEntity -> {siteEntity.setStatus(StatusType.INDEXED); siteRepository.save(siteEntity);});
+                siteRepository.findAll().forEach(siteEntity -> {
+                    siteEntity.setStatus(StatusType.INDEXED);
+                    siteRepository.save(siteEntity);
+                });
             });
             secondaryThread.start();
 
@@ -87,12 +90,14 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        if (task.isShutdown()) {
+        if (!(task.getQueuedTaskCount() > 0)) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
-//            taskList.values().forEach(task -> task.cancel(true));
             task.shutdownNow();
-            siteRepository.findAll().forEach(siteEntity -> {siteEntity.setStatus(StatusType.FAILED); siteRepository.save(siteEntity);});
+            siteRepository.findAll().forEach(siteEntity -> {
+                siteEntity.setStatus(StatusType.FAILED);
+                siteRepository.save(siteEntity);
+            });
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }

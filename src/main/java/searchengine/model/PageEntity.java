@@ -15,8 +15,8 @@ import java.util.List;
 @Getter
 @Setter
 @ApiModel(description = "entity representing a webpage")
-@Table(name = "pages", indexes = {@Index(name = "path", columnList = "path")
-//        @Index(name = "site_id", columnList = "site_id")
+@Table(name = "pages", indexes = {@Index(name = "path", columnList = "path"),
+        @Index(name = "site_id", columnList = "site_id")
 })
 public class PageEntity implements Serializable {
     @Id

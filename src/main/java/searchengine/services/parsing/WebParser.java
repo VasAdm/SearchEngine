@@ -12,6 +12,8 @@ import searchengine.repository.SiteRepository;
 import searchengine.services.lemmasIndexesScraper.LemmasIndexesCollector;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.RecursiveAction;
 
@@ -24,7 +26,7 @@ public class WebParser extends RecursiveAction {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private final Set<String> pageSet;
+    private static final Set<String> pageSet = Collections.synchronizedSet(new HashSet<>());
     private final boolean root;
 
     @Override
@@ -46,7 +48,7 @@ public class WebParser extends RecursiveAction {
 
             htmlParser.getPaths().stream()
                     .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,
-                            lemmaRepository, indexRepository, pageSet, false)).forEach(WebParser::fork);
+                            lemmaRepository, indexRepository, false)).forEach(WebParser::fork);
         }
     }
 
