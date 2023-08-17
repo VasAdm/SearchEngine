@@ -20,6 +20,7 @@ public class TaskRunner implements Runnable {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
+    private static final ForkJoinPool task = new ForkJoinPool();
 
     public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.siteEntity = siteEntity;
@@ -31,13 +32,8 @@ public class TaskRunner implements Runnable {
 
     @Override
     public void run() {
-        ForkJoinPool.commonPool().execute(new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true));
-        log.info("Запущен парсинг сайта: " + siteEntity.getName());
-//        try (ForkJoinPool task = new ForkJoinPool()) {
-//            WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
-//            log.info("Запущен парсинг сайта: " + siteEntity.getName());
-//            task.invoke(webParser);
-//        }
-//    }
+            WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
+            log.info("Запущен парсинг сайта: " + siteEntity.getName());
+            task.execute(webParser);
     }
 }

@@ -26,26 +26,16 @@ create type status_type as enum (
     'FAILED'
     );
 
-create table indexes
+create table sites
 (
-    id       serial  not null,
-    page_id  integer not null,
-    lemma_id integer not null,
-    rank     FLOAT   NOT NULL,
-
+    id          serial       not null,
+    status      status_type  not null,
+    status_time timestamp(6) not null,
+    last_error  TEXT,
+    url         VARCHAR(255) NOT NULL,
+    name        VARCHAR(255) NOT NULL,
     primary key (id)
 );
-
-
-create table lemmas
-(
-    id        serial       not null,
-    site_id   integer      not null,
-    lemma     VARCHAR(255) NOT NULL,
-    frequency INT          NOT NULL,
-    primary key (id)
-);
-
 
 create table pages
 (
@@ -57,45 +47,62 @@ create table pages
     primary key (id)
 );
 
-
-create table sites
+create table lemmas
 (
-    id          serial       not null,
-    status      status_type  not null,
-    status_time timestamp(6) not null,
-    last_error  TEXT,
-    url         VARCHAR(255) NOT NULL,
-    name        VARCHAR(255) NOT NULL,
+    id        serial       not null,
+    site_id   integer      not null,
+    lemma     VARCHAR(255) NOT NULL,
+    frequency INT          NOT NULL,
     primary key (id)
 );
-create index path on pages (path);
 
+create table indexes
+(
+    id       serial  not null,
+    page_id  integer not null,
+    lemma_id integer not null,
+    rank     FLOAT   NOT NULL,
+    primary key (id)
+);
+
+-- create index path on pages (path);
+alter table if exists pages
+    add constraint pages_site_fk
+        foreign key (site_id)
+            references sites
+            on update cascade on delete cascade;
+
+create index pages_site_id_index
+    on pages (site_id);
+
+alter table if exists lemmas
+    add constraint lemmas_site_fk
+        foreign key (site_id)
+            references sites
+            on update cascade on delete cascade;
+
+create index lemmas_site_id_index
+    on lemmas (site_id);
 
 alter table if exists indexes
     add constraint indexes_lemma_fk
         foreign key (lemma_id)
             references lemmas;
 
-
 alter table if exists indexes
     add constraint indexes_page_fk
         foreign key (page_id)
-            references pages;
+            references pages
+            on update cascade on delete cascade;
 
+create index indexes_lemma_id_index
+    on indexes (lemma_id);
 
-alter table if exists lemmas
-    add constraint lemmas_site_fk
-        foreign key (site_id)
-            references sites;
+create index indexes_page_id_index
+    on indexes (page_id);
 
-
-alter table if exists pages
-    add constraint pages_site_fk
-        foreign key (site_id)
-            references sites;
-
-create unique index site_path
+create unique index page_site_id_path_index
     on pages (site_id, path);
 
-create unique index site_lemma_index
+create unique index lemmas_site_id_lemma_index
     on lemmas (site_id, lemma);
