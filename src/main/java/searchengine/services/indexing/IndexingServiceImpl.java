@@ -20,10 +20,12 @@ import searchengine.services.parsing.WebParser;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 
@@ -35,7 +37,7 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private final ForkJoinPool task = new ForkJoinPool();
+    private final Map<SiteEntity, WebParser> parserMap = Collections.synchronizedMap(new HashMap<>());
 
     @Autowired
     public IndexingServiceImpl(SitesList sites, SiteRepository siteRepository, PageRepository pageRepository,
@@ -49,38 +51,55 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> startIndexing() {
-        Set<SiteEntity> siteEntities = new HashSet<>();
 
-        sites.getSites().forEach(s -> {
-            SiteEntity site = siteRepository.getByUrl(s.getUrl());
-            if (site != null) siteEntities.add(site);
-        });
+        Set<SiteEntity> siteEntities = sites.getSites()
+                .stream()
+                .map(s -> siteRepository.getByUrl(s.getUrl()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
         if (siteEntities.stream().map(SiteEntity::getStatus).anyMatch(Predicate.isEqual(StatusType.INDEXING))) {
             return ResponseEntity.badRequest()
                     .body(new IndexingStatusResponseError(false, "Индексация уже запущена"));
         } else {
             Thread secondaryThread = new Thread(() -> {
-                siteRepository.deleteAllInBatch(siteEntities);
 
+                siteRepository.deleteAllInBatch(siteEntities);
                 sites.getSites().forEach(site -> {
                     SiteEntity siteEntity = createSite(site);
-                    WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, true);
-                    log.info("Запущен парсинг сайта: " + siteEntity.getName());
-                    task.execute(webParser);
+                    WebParser.clearPageSet();
+                    WebParser siteParser = new WebParser(siteEntity, siteEntity.getUrl(), siteRepository,
+                            pageRepository, lemmaRepository, indexRepository, true);
+                    parserMap.put(siteEntity, siteParser);
                 });
-                while (!task.isTerminated() || !task.isShutdown()) {
-                    try {
-                        sleep(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        System.out.println(Thread.currentThread().getName() + " interrupted");
+
+                try (ForkJoinPool task = new ForkJoinPool()) {
+                    parserMap.values().forEach(task::execute);
+
+                    while (!parserMap.isEmpty()) {
+                        Iterator<Map.Entry<SiteEntity, WebParser>> iterator = parserMap.entrySet().iterator();
+                        while (iterator.hasNext()) {
+                            Map.Entry<SiteEntity, WebParser> entry = iterator.next();
+
+                            if (entry.getValue().state().equals(Future.State.CANCELLED)) {
+                                entry.getKey().setStatus(StatusType.FAILED);
+                                entry.getKey().setLastError("Индексация остановлена пользователем");
+                                log.info("Парсинг сайта: " + entry.getKey().getName() + " отменён пользователем");
+                                entry.getKey().setStatusTime(LocalDateTime.now());
+                                siteRepository.saveAndFlush(entry.getKey());
+                                parserMap.remove(entry.getKey());
+                                iterator.remove();
+                            } else if (entry.getValue().state().equals(Future.State.SUCCESS)) {
+                                log.info("Парсинг сайта: " + entry.getKey().getName() + " завершён.");
+                                entry.getKey().setStatus(StatusType.INDEXED);
+                                entry.getKey().setStatusTime(LocalDateTime.now());
+                                siteRepository.saveAndFlush(entry.getKey());
+                                parserMap.remove(entry.getKey());
+                                iterator.remove();
+                            }
+                        }
                     }
                 }
-                siteRepository.findAll().forEach(siteEntity -> {
-                    siteEntity.setStatus(StatusType.INDEXED);
-                    siteRepository.save(siteEntity);
-                });
             });
             secondaryThread.start();
 
@@ -90,14 +109,10 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        if (!(task.getQueuedTaskCount() > 0)) {
+        if (parserMap.isEmpty()) {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
-            task.shutdownNow();
-            siteRepository.findAll().forEach(siteEntity -> {
-                siteEntity.setStatus(StatusType.FAILED);
-                siteRepository.save(siteEntity);
-            });
+            parserMap.values().forEach(parser -> System.out.println(parser.cancel(false)));
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }
@@ -171,11 +186,4 @@ public class IndexingServiceImpl implements IndexingService {
         }
         return result;
     }
-
-//    private void clearTables() {
-//        indexRepository.deleteAllInBatch();
-//        lemmaRepository.deleteAllInBatch();
-//        pageRepository.deleteAllInBatch();
-//        siteRepository.deleteAllInBatch();
-//    }
 }

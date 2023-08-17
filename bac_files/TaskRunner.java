@@ -31,12 +31,8 @@ public class TaskRunner implements Runnable {
 
     @Override
     public void run() {
-//        execute(new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true));
-//        log.info("Запущен парсинг сайта: " + siteEntity.getName());
-        try (ForkJoinPool task = new ForkJoinPool()) {
             WebParser webParser = new WebParser(siteEntity, "/", siteRepository, pageRepository, lemmaRepository, indexRepository, pageSet, true);
             log.info("Запущен парсинг сайта: " + siteEntity.getName());
-            task.invoke(webParser);
-        }
+            task.execute(webParser);
     }
 }

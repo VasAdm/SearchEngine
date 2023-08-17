@@ -75,11 +75,6 @@ alter table if exists pages
 create index pages_site_id_index
     on pages (site_id);
 
-alter table if exists indexes
-    add constraint indexes_lemma_fk
-        foreign key (lemma_id)
-            references lemmas;
-
 alter table if exists lemmas
     add constraint lemmas_site_fk
         foreign key (site_id)
@@ -88,6 +83,11 @@ alter table if exists lemmas
 
 create index lemmas_site_id_index
     on lemmas (site_id);
+
+alter table if exists indexes
+    add constraint indexes_lemma_fk
+        foreign key (lemma_id)
+            references lemmas;
 
 alter table if exists indexes
     add constraint indexes_page_fk

@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.RecursiveAction;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -45,10 +46,10 @@ public class WebParser extends RecursiveAction {
 
                 updateStatusTime();
             }
-
-            htmlParser.getPaths().stream()
-                    .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,
-                            lemmaRepository, indexRepository, false)).forEach(WebParser::fork);
+            Set<ForkJoinTask<Void>> webParsers = htmlParser.getPaths().stream()
+                    .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,lemmaRepository, indexRepository, false).fork())
+                    .collect(Collectors.toSet());
+            webParsers.forEach(ForkJoinTask::join);
         }
     }
 
@@ -70,5 +71,9 @@ public class WebParser extends RecursiveAction {
 
     protected void savePage(PageEntity page) {
         pageRepository.save(page);
+    }
+
+    public static void clearPageSet() {
+        pageSet.clear();
     }
 }
