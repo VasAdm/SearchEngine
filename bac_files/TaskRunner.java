@@ -20,7 +20,6 @@ public class TaskRunner implements Runnable {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private static final ForkJoinPool task = new ForkJoinPool();
 
     public TaskRunner(SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.siteEntity = siteEntity;

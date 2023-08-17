@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 import java.util.stream.Collectors;
 
@@ -47,7 +46,6 @@ public class WebParser extends RecursiveAction {
 
                 updateStatusTime();
             }
-
             Set<ForkJoinTask<Void>> webParsers = htmlParser.getPaths().stream()
                     .map(childPath -> new WebParser(siteEntity, childPath, siteRepository, pageRepository,lemmaRepository, indexRepository, false).fork())
                     .collect(Collectors.toSet());

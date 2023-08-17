@@ -1,5 +1,6 @@
 package searchengine.services.indexing;
 
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static java.lang.Thread.sleep;
 
 @Service
 @Slf4j
@@ -110,7 +113,6 @@ public class IndexingServiceImpl implements IndexingService {
             return ResponseEntity.badRequest().body(new IndexingStatusResponseError(false, "Индексаци не запущена"));
         } else {
             parserMap.values().forEach(parser -> System.out.println(parser.cancel(false)));
-
             return ResponseEntity.ok(new IndexingStatusResponse(true));
         }
     }
